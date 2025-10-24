@@ -1,0 +1,19 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/ab5c8_next_dist_c35cd2ab._.js",
+      "static/chunks/monkey-banana_src_app_favicon_ico_mjs_ad7654da._.js",
+      "static/chunks/[root-of-the-server]__4d6b58e3._.css",
+      "static/chunks/monkey-banana_src_app_layout_tsx_bd46ab82._.js",
+      "static/chunks/[turbopack]_browser_dev_hmr-client_hmr-client_ts_857bdf7c._.js",
+      "static/chunks/ab5c8_next_dist_compiled_react-dom_28092dfe._.js",
+      "static/chunks/ab5c8_next_dist_compiled_next-devtools_index_cfc3db03.js",
+      "static/chunks/ab5c8_next_dist_compiled_66e3a9f4._.js",
+      "static/chunks/ab5c8_next_dist_client_af909877._.js",
+      "static/chunks/ab5c8_next_dist_a2171e89._.js",
+      "static/chunks/ab5c8_@swc_helpers_cjs_14c2a738._.js",
+      "static/chunks/monkey-banana_a0ff3932._.js",
+      "static/chunks/turbopack-monkey-banana_0a5c9901._.js"
+    ]
+  }
+}
