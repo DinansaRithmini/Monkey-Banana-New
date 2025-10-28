@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ContinuousBettingWheel from "@/components/UIComponents/ContinuousBettingWheel/ContinuousBettingWheel";
+import ContinuousBettingWheel from "../components/UIComponents/ContinuousBettingWheel/ContinuousBettingWheel";
 
 export default function HomePage() {
   return (

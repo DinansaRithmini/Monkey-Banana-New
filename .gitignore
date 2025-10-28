@@ -1,5 +1,6 @@
 # Dependencies
 /node_modules
+/server/node_modules
 
 # Builds
 .next
@@ -11,3 +12,6 @@ out
 .env
 .DS_Store
 .vscode
+
+/server/private_key.pem
+/server/.env
