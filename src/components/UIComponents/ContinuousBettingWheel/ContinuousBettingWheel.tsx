@@ -6,11 +6,13 @@ import { useWindowSize } from "@uidotdev/usehooks";
 import { useContinuousGame } from "../../hooks/useContinuousGame";
 
 import SlotMachine from "./subcomponents/SlotMachine";
-import ResultPopup from "./subcomponents/ResultPopup";
+//import ResultPopup from "./subcomponents/ResultPopup";
 import InsufficientPopup from "./subcomponents/InsufficientPopup";
 import BetConfirmationPopup from "./subcomponents/BetConfirmationPopup";
 import { Button } from "@/components/ui/button";
 
+import WinPopup from "./subcomponents/winpopup";
+import LosePopup from "./subcomponents/losepopup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 
@@ -32,7 +34,9 @@ const ContinuousBettingWheel: React.FC = () => {
   const [showInsufficient, setShowInsufficient] = useState(false);
   const [showResult, setShowResult] = useState(false);
   const [isWinner, setIsWinner] = useState(false);
-  const [showPopup, setShowPopup] = useState(false); // State for popup visibility
+  const [showPopup, setShowPopup] = useState(false);
+  const [showWinPopup, setShowWinPopup] = useState(false);
+  const [showLosePopup, setShowLosePopup] = useState(false);
 
   const { width, height } = useWindowSize();
 
@@ -155,12 +159,6 @@ const ContinuousBettingWheel: React.FC = () => {
         backgroundColor: "#FFD85A",
       }}
     >
-      {/* Popups */}
-      <ResultPopup
-        show={showResult}
-        isWinner={isWinner}
-        onClose={() => setShowResult(false)}
-      />
       <InsufficientPopup
         show={showInsufficient}
         onClose={() => setShowInsufficient(false)}
@@ -172,7 +170,18 @@ const ContinuousBettingWheel: React.FC = () => {
         onCancel={() => setShowBetPopup(false)}
         isPlacing={false}
       />
-
+      <WinPopup
+        show={showWinPopup}
+        isWinner={false}
+        amount={34}
+        onClose={() => setShowWinPopup(false)}
+      />
+      <LosePopup
+        show={showLosePopup}
+        isLoser={false}
+        amount={23}
+        onClose={() => setShowLosePopup(false)}
+      />
       {/* Header Section */}
       <div className="relative w-full flex justify-center items-start pt-8 pb-2">
         <div className="relative flex flex-col items-center text-center">
@@ -192,7 +201,6 @@ const ContinuousBettingWheel: React.FC = () => {
           </span>
         </div>
       </div>
-
       {/* Temporary Button to Test the Insufficient Balance Popup */}
       <button
         onClick={handleShowPopup}
@@ -200,12 +208,27 @@ const ContinuousBettingWheel: React.FC = () => {
       >
         Test Popup
       </button>
-
+      //
+      <button
+        onClick={() => {
+          setShowWinPopup(true); // Show Win Popup
+          setShowLosePopup(false); // Hide Lose Popup
+        }}
+        className="bg-[#B26A42] text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-[#D38B5F] transition-all"
+      >
+        Test Win Popup
+      </button>
+      <button
+        onClick={() => {
+          setShowWinPopup(false); // Hide Win Popup
+          setShowLosePopup(true); // Show Lose Popup
+        }}
+        className="bg-[#FF0000] text-white font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-[#D38B5F] transition-all ml-4"
+      >
+        Test Lose Popup
+      </button>
       {/* Insufficient Balance Popup */}
       <InsufficientPopup show={showPopup} onClose={handleClosePopup} />
-
-       
-
       {/* Slot Machine */}
       <div className="mt-6">
         <SlotMachine

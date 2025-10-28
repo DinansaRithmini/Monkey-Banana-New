@@ -1,90 +1,94 @@
 "use client";
 import React from "react";
-import { Button } from "@/components/ui/button";
 
 interface BetConfirmationPopupProps {
   show: boolean;
-  amount: number | null;
-  isPlacing: boolean;
+  amount: number;
   onConfirm: () => void;
   onCancel: () => void;
+  isPlacing: boolean;
 }
 
 const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
   show,
   amount,
-  isPlacing,
   onConfirm,
   onCancel,
+  isPlacing,
 }) => {
-  if (!show || amount === null) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+    <div
+      className={`fixed inset-0 flex items-center justify-center transition-opacity duration-300 ${
+        show
+          ? "opacity-100 pointer-events-auto bg-black/70 z-50"
+          : "opacity-0 pointer-events-none"
+      }`}
+      onClick={onCancel}
+    >
+      {/* Popup Card */}
       <div
-        className="bg-white rounded-2xl p-6 text-center max-w-sm w-[90vw] shadow-[0_6px_32px_rgba(0,0,0,0.25)] relative overflow-hidden"
+        className="relative w-[420px] h-[380px] bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center rounded-xl shadow-lg drop-shadow-[0_0_25px_#FFD85A] transition-transform duration-300 scale-100"
+        style={{
+          backgroundImage: "url('/images/insufficient_balance_background.png')",
+        }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Top banana arc background */}
-        <div className="absolute -top-28 left-1/2 -translate-x-1/2 w-full h-60 z-0 overflow-hidden pointer-events-none">
-          <div
-            className="w-full h-full"
-            style={{
-              background: "linear-gradient(90deg, #FFD85A, #F7A531)",
-              borderBottomLeftRadius: "100% 60%",
-              borderBottomRightRadius: "100% 60%",
-            }}
-          ></div>
-        </div>
-
-        {/* Main Content */}
-        <div className="relative z-10">
-          {/* Coin Icon */}
+        {/* Popup Content */}
+        <div className="flex flex-col items-center justify-center h-full text-center">
+          {/* Gold Coin Image */}
           <img
-            src="/images/Coin.png"
-            alt="Coin"
-            className="w-16 h-16 mx-auto mb-3"
+            src="/images/gold_coin.png"
+            alt="Gold Coin"
+            className="w-[80px] h-[80px] my-2 animate-pulse drop-shadow-[0_0_10px_#FFD85A]"
           />
+          {/* Title */}
+          <h2 className="text-[#A96229] text-2xl font-bungee leading-tight mb-4 mt-[10px]">
+            CONFIRM
+            <br />
+            YOUR WAGER
+          </h2>
 
-          {/* Heading */}
-          <h3 className="text-[#4E2A0B] font-extrabold text-xl mb-2">
-            Confirm Wager
-          </h3>
+          {/* Description */}
+          <div className="text-center mt-[20px]">
+            <p className="text-[#5E5E5E] font-medium text-sm mb-3">
+              Are you sure you want to place
+            </p>
 
-          <p className="text-sm text-gray-700 mb-4">
-            Are you sure you want to place a wager of
-          </p>
-
-          {/* Amount */}
-          <div className="flex justify-center items-center mb-4">
-            <img
-              src="/images/Coin.png"
-              alt="coin"
-              className="inline-block w-6 h-6 mr-2"
-            />
-            <span className="text-2xl font-extrabold text-[#8B5A2B]">
-              {amount.toLocaleString()}
-            </span>
+            {/* Amount with Gameon Chip */}
+            <div className="flex items-center justify-center space-x-2">
+              <img
+                src="/images/gameon_chip.png"
+                alt="Gameon Chip"
+                className="w-[40px] h-[40px]"
+              />
+              <span className="font-bungee text-[#A96229] font-bold text-3xl">
+                {amount}
+              </span>
+            </div>
+            {/* Additional Text after Amount */}
+            <p className="text-[#5E5E5E] font-medium text-sm mt-7">
+              This amount will be deducted from
+              <br></br>your wallet balance.
+            </p>
           </div>
 
-          <p className="text-xs text-gray-500 mb-6">
-            This amount will be deducted from your wallet balance
-          </p>
-
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <Button
-              onClick={onCancel}
-              className="flex-1 bg-gray-300 text-[#4E2A0B] hover:bg-gray-400"
-            >
-              Cancel
-            </Button>
-            <Button
+          {/* Action Buttons */}
+          <div className="flex flex-col space-y-2 mt-[40px]">
+            {/* Confirm Button */}
+            <button
               onClick={onConfirm}
               disabled={isPlacing}
-              className="flex-1 bg-gradient-to-b from-[#FFD85A] to-[#F7A531] text-[#4E2A0B] font-extrabold hover:brightness-105"
+              className="relative w-[180px] h-[60px] active:scale-95 transition-transform"
             >
-              {isPlacing ? "Placing..." : "Confirm"}
-            </Button>
+              <img
+                src="/images/light_brown_button.png"
+                alt="Confirm Button"
+                className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+              />
+              <span className="relative z-10 flex items-center justify-center h-full text-white font-bungee text-lg">
+                {isPlacing ? "PLACING..." : "CONFIRM"}
+              </span>
+            </button>
           </div>
         </div>
       </div>
