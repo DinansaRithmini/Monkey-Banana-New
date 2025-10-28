@@ -14,10 +14,7 @@ interface WinPageProps {
 const WinPage: React.FC<WinPageProps> = ({ amount,show,isWinner, onClose }) => {
   const router = useRouter();
 
-  const handleGoHome = () => {
-    // Redirect to the home page or any desired route
-    router.push("/"); // Or you can change this path to your desired route
-  };
+  if (!show) return null;
 
   return (
     <div
@@ -47,7 +44,7 @@ const WinPage: React.FC<WinPageProps> = ({ amount,show,isWinner, onClose }) => {
 
         {/* Button to go back to Home or Any Action */}
         <Button
-          onClick={handleGoHome}
+          onClick={onClose}
           className="bg-[#FFDD00] text-white font-bungee text-lg py-2 px-6 rounded-lg hover:bg-yellow-300 transition-all"
         >
           GO HOME
