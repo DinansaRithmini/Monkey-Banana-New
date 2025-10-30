@@ -106,7 +106,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           <img
             src="/images/slot_machine.gif"
             alt="Slot Machine"
-            className="relative drop-shadow-lg select-none pointer-events-none max-w-[538px] h-auto z-10 mt-[1px]"
+            className="drop-shadow-lg select-none pointer-events-none max-w-[100%] h-auto z-10 mt-[1px]"
           />
 
           <SlotMachineReel players={players} isSpinning={isSpinning} />
@@ -176,12 +176,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             {gameState && gameState.players.length > 0 && (
               <div className="relative w-full flex justify-center mt-60">
                 {/* 🟤 Background */}
-                
+
                 <div className="relative w-screen -mx-15 h-auto">
                   <img
                     src="/images/past_player_background.png"
                     alt="Active Players Background"
-                    className="absolute left-1/2 top-0 -translate-x-1/2 w-[140vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-110"
+                    className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
                     style={{
                       minHeight: "520px",
                     }}
@@ -189,7 +189,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
                   {/* === Content Overlay === */}
                   <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                    
+
                     {/* 🏷️ Header */}
                     <div className="px-5 py-8 mb-10">
                       <span className="font-bungee text-white text-lg md:text-xl drop-shadow-[2px_2px_0_#4E2A0B]">
@@ -239,7 +239,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 <img
                   src="/images/past_player_background.png"
                   alt="Past Winners Background"
-                  className="absolute left-1/2 top-0 -translate-x-1/2 w-[140vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-110"
+                  className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
                   style={{
                     minHeight: "520px",
                   }}
@@ -256,38 +256,49 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
                   {/* 👑 Winner Cards */}
                   {winners.length === 0 ? (
-                    <div className="text-center text-white/60 py-4">No winners yet. Be the first!</div>
+                    <div className="text-center text-white/60 py-4">
+                      No winners yet. Be the first!
+                    </div>
                   ) : (
-                    <div className="w-full flex flex-col items-center gap-3">
-                      {winners.map((winner, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center w-[280px] h-[60px] bg-[#4E2A0B] rounded-xl shadow-md px-3 gap-3"
-                        >
-                          <img
-                            src={winner.profileImage}
-                            alt={winner.playerName}
-                            className="w-[45px] h-[45px] rounded-full object-cover border-2 border-[#FFD85A]"
-                          />
-                          <div className="flex flex-col flex-grow">
-                            <span className="font-bungee text-white text-sm leading-tight">
-                              {winner.playerName.toUpperCase()}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <img
-                                src="/images/gameon_chip.png"
-                                alt="coin"
-                                className="w-4 h-4 object-contain"
-                              />
-                              <span className="text-[#FFD85A] font-bungee text-base">
-                                {winner.wonAmount.toFixed(2)}
+                    <div className="w-full flex justify-center">
+                      <div
+                        className="flex flex-col items-center gap-3 overflow-y-auto scrollbar-hide"
+                        style={{
+                          maxHeight: "340px", // roughly 5.5 cards (60px each + gap)
+                          paddingRight: "4px", // avoids scroll bar overlap
+                        }}
+                      >
+                        {winners.map((winner, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center w-[280px] h-[60px] bg-[#4E2A0B] rounded-xl shadow-md px-3 gap-3 flex-shrink-0"
+                          >
+                            <img
+                              src={winner.profileImage}
+                              alt={winner.playerName}
+                              className="w-[45px] h-[45px] rounded-full object-cover border-2 border-[#FFD85A]"
+                            />
+                            <div className="flex flex-col flex-grow">
+                              <span className="font-bungee text-white text-sm leading-tight truncate">
+                                {winner.playerName.toUpperCase()}
                               </span>
+                              <div className="flex items-center gap-1">
+                                <img
+                                  src="/images/gameon_chip.png"
+                                  alt="coin"
+                                  className="w-4 h-4 object-contain"
+                                />
+                                <span className="text-[#FFD85A] font-bungee text-base">
+                                  {winner.wonAmount.toFixed(2)}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   )}
+
                 </div>
               </div>
             </div>
