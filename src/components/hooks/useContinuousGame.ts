@@ -1,141 +1,229 @@
-import { useEffect, useState, useRef } from "react";
-import axios from "axios";
+// hooks/useContinuousGame.ts
+"use client"
 
-// 🧠 Define your game state type
-interface Player {
+import { useState, useEffect, useCallback } from "react"
+import type { GameState } from "../lib/types"
+
+// Define bot types
+interface Bot {
   id: string;
   name: string;
-  profileImage?: string;
-  amount: number;
+  profileImage: string;
+  isBot: boolean;
 }
 
-interface Winner {
-  id: string;
-  name: string;
-  profileImage?: string;
-}
+const BOTS: Bot[] = [
+  // { id: "bot-1", name: "Cavernus", profileImage: "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png", isBot: true },
+  // { id: "bot-2", name: "Volcano", profileImage: "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png", isBot: true },
+  // { id: "bot-3", name: "Pixel", profileImage: "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png", isBot: true },
+  // { id: "bot-4", name: "Gravity", profileImage: "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png", isBot: true },
+  // { id: "bot-5", name: "Ember", profileImage: "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png", isBot: true },
+];
 
-interface GameState {
-  phase: "betting" | "spinning" | "finished" | "round_ending";
-  totalPot: number;
-  timeLeft: number;
-  roundNumber: number;
-  players: Player[];
-  winner?: Winner | null;
-  rotation?: number;
-}
+const BOT_BET_AMOUNTS = [1, 5];
 
-interface UseContinuousGameReturn {
-  gameState: GameState | null;
-  loading: boolean;
-  error: string | null;
-  joinGame: (playerName: string, betAmount: number) => Promise<{ success: boolean; error?: string }>;
-  addBotsToGame: (bots: any[]) => Promise<void>;
-  userId: string | null;
-  playerName: string | null;
-  gameSessionUuid: string | null;
-}
+export function useContinuousGame() {
+  const [gameState, setGameState] = useState<GameState | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [playerName, setPlayerName] = useState<string | null>(null)
+  const [gameSessionUuid, setGameSessionUuid] = useState<string | null>(null)
+  const [avatarImagePath, setAvatarImagePath] = useState<string | null>(null)
+  const [rawGameState, setRawGameState] = useState<GameState | null>(null)
+  const [lastBotCheckTime, setLastBotCheckTime] = useState<number>(0)
+  const [addedBots, setAddedBots] = useState<string[]>([])
 
-/**
- * 🎮 useContinuousGame
- * Custom hook to handle continuous betting game logic (socket or polling based)
- */
-export function useContinuousGame(): UseContinuousGameReturn {
-  const [gameState, setGameState] = useState<GameState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [playerName, setPlayerName] = useState<string | null>("Player_" + Math.floor(Math.random() * 1000));
-  const [gameSessionUuid, setGameSessionUuid] = useState<string | null>(null);
-
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // ⚙️ Fetch or simulate game state
-  const fetchGameState = async () => {
-    try {
-      // Example backend endpoint
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL || ""}/api/gameState`
-      );
-
-      if (response.data?.status && response.data?.gameState) {
-        setGameState(response.data.gameState);
-        setError(null);
-      } else {
-        // fallback to mock data if backend not ready
-        setGameState(mockGameState());
-      }
-    } catch (err) {
-      console.warn("⚠️ Backend not available — using mock state");
-      setGameState(mockGameState());
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 🧍 Join Game
-  const joinGame = async (playerName: string, betAmount: number) => {
-    try {
-      // Example backend join call
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL || ""}/api/joinGame`,
-        { name: playerName, amount: betAmount }
-      );
-
-      if (response.data?.success) {
-        await fetchGameState();
-        return { success: true };
-      }
-      return { success: false, error: response.data?.message || "Join failed" };
-    } catch (err) {
-      console.error("Join game error", err);
-      return { success: false, error: "Network error joining game" };
-    }
-  };
-
-  // 🤖 Add bots dynamically (optional)
-  const addBotsToGame = async (bots: any[]) => {
-    try {
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL || ""}/api/addBots`,
-        { bots }
-      );
-      await fetchGameState();
-    } catch (err) {
-      console.error("Add bots failed", err);
-    }
-  };
-
-  // 🌀 Poll game state every few seconds
+  // Get userId from URL on mount
   useEffect(() => {
-    fetchGameState();
-    intervalRef.current = setInterval(fetchGameState, 5000);
+    const params = new URLSearchParams(window.location.search)
 
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, []);
+    const uuidFromUrl = params.get("uuid") || params.get("userId")
+    const sessionUuidFromUrl = params.get("gameSessionUuid") || params.get("room")
 
-  // 🪃 Helper mock game data (used if backend not responding)
-  const mockGameState = (): GameState => {
-    const mockPlayers: Player[] = [
-      { id: "1", name: "Andrew Derek", amount: 40, profileImage: "/avatars/player1.png" },
-      { id: "2", name: "Enjella Melon", amount: 16, profileImage: "/avatars/player2.png" },
-      { id: "3", name: "David Yomen", amount: 6, profileImage: "/avatars/player3.png" },
-    ];
+    // userId
+    if (uuidFromUrl) {
+      setUserId(uuidFromUrl)
+    } else {
+      const sessionId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      setUserId(sessionId)
+    }
 
-    const randomWinner = mockPlayers[Math.floor(Math.random() * mockPlayers.length)];
+    // gameSessionUuid
+    if (sessionUuidFromUrl) {
+      setGameSessionUuid(sessionUuidFromUrl)
+    }
+  }, [])
 
-    return {
-      phase: ["betting", "spinning", "finished"][Math.floor(Math.random() * 3)] as GameState["phase"],
-      totalPot: 62,
-      timeLeft: Math.floor(Math.random() * 60),
-      roundNumber: Math.floor(Math.random() * 1000),
-      players: mockPlayers,
-      winner: randomWinner,
-      rotation: Math.floor(Math.random() * 360),
-    };
+  useEffect(() => {
+    if (!userId || !gameSessionUuid) return
+
+    const fetchPlayerDetails = async () => {
+      try {
+        const url = `${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/getPlayerDetails?uuid=${userId}`
+        const res = await fetch(url)
+
+        if (!res.ok) throw new Error("Network response was not ok")
+
+        const { player, gameSessionUuid } = await res.json()
+
+        if (player) {
+          setPlayerName(player.name ?? "")
+          const profileImg =
+            player.profileImage || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png"
+          setAvatarImagePath(profileImg)
+        }
+      } catch (e) {
+        setAvatarImagePath("https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png")
+      }
+    }
+
+    fetchPlayerDetails()
+  }, [userId, gameSessionUuid])
+
+  const fetchGameState = useCallback(async () => {
+    try {
+      const response = await fetch("/api/continuous-game")
+      const data = await response.json()
+
+      if (data.success) {
+        setRawGameState(data.game)
+        setError(null)
+
+        // Check if we need to add bots
+        if (data.game && data.game.phase === "betting") {
+          const now = Date.now();
+          // Only check every 5 seconds to avoid too frequent checks
+          if (now - lastBotCheckTime > 5000) {
+            setLastBotCheckTime(now);
+
+            // Count real players (excluding bots)
+            const realPlayers = data.game.players.filter((player: { id: string; }) =>
+              !player.id.startsWith('bot-') && !addedBots.includes(player.id)
+            );
+
+            // Only add bots if there are less than 5 real players
+            if (realPlayers.length < 5) {
+              // Add bots at random intervals (not all at once)
+              const shouldAddBot = Math.random() < 0.3; // 30% chance to add a bot each check
+
+              if (shouldAddBot) {
+                const botsNeeded = 5 - realPlayers.length;
+                if (botsNeeded > 0) {
+                  addSingleBot();
+                }
+              }
+            }
+          }
+        }
+      } else {
+        setError(data.error)
+      }
+    } catch (err) {
+      setError("Failed to fetch game state")
+    } finally {
+      setLoading(false)
+    }
+  }, [lastBotCheckTime, addedBots])
+
+  // New effect to handle merging whenever avatar or raw state changes
+  useEffect(() => {
+    if (!rawGameState || !avatarImagePath || !userId) {
+      if (rawGameState) setGameState(rawGameState)
+      return
+    }
+
+    const merged = {
+      ...rawGameState,
+      players: rawGameState.players.map((p) => (p.id === userId ? { ...p, profileImage: avatarImagePath } : p)),
+    }
+
+    setGameState(merged)
+  }, [rawGameState, avatarImagePath, userId])
+
+  // Poll for updates every second
+  useEffect(() => {
+    fetchGameState()
+    const interval = setInterval(fetchGameState, 1000)
+    return () => clearInterval(interval)
+  }, [fetchGameState])
+
+  const addSingleBot = async () => {
+    if (!gameState) return;
+
+    // Count real players (excluding bots)
+    const realPlayers = gameState.players.filter(player =>
+      !player.id.startsWith('bot-') && !addedBots.includes(player.id)
+    );
+
+    // Only add bots if there are less than 5 real players
+    if (realPlayers.length >= 5) return;
+
+    const availableBots = BOTS.filter(bot => !addedBots.includes(bot.id));
+    if (availableBots.length === 0) return;
+
+    const randomBot = availableBots[Math.floor(Math.random() * availableBots.length)];
+    const randomAmount = BOT_BET_AMOUNTS[Math.floor(Math.random() * BOT_BET_AMOUNTS.length)];
+
+    const newAddedBots = [...addedBots, randomBot.id];
+    setAddedBots(newAddedBots);
+
+    await addBotsToGame([{
+      name: randomBot.name,
+      amount: randomAmount,
+      id: randomBot.id,
+      profileImage: randomBot.profileImage
+    }]);
   };
+
+  const addBotsToGame = useCallback(async (bots: { name: string; amount: number; id: string; profileImage: string }[]) => {
+    try {
+      const response = await fetch("/api/continuous-game/add-bots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bots,
+        }),
+      })
+
+      const data = await response.json()
+      return data
+    } catch (err) {
+      return { success: false, error: "Failed to add bots" }
+    }
+  }, [])
+
+  const joinGame = useCallback(
+    async (name: string, amount: number) => {
+      if (!userId) {
+        return { success: false, error: "User ID not available" }
+      }
+
+      try {
+        const response = await fetch("/api/continuous-game/join", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            amount,
+            userId,
+            profileImage: avatarImagePath || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png",
+          }),
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          return { success: true, playerId: data.playerId }
+        } else {
+          return { success: false, error: data.error }
+        }
+      } catch (err) {
+        return { success: false, error: "Failed to join game" }
+      }
+    },
+    [userId, avatarImagePath],
+  )
 
   return {
     gameState,
@@ -143,8 +231,10 @@ export function useContinuousGame(): UseContinuousGameReturn {
     error,
     joinGame,
     addBotsToGame,
+    refetch: fetchGameState,
     userId,
     playerName,
     gameSessionUuid,
-  };
+    avatarImagePath,
+  }
 }

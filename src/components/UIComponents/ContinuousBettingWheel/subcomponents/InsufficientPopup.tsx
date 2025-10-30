@@ -60,7 +60,6 @@ const InsufficientPopup: React.FC<InsufficientPopupProps> = ({
           </button>
         </div>
       </div>
-      //
     </div>
   );
 };

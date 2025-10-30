@@ -68,6 +68,24 @@ const ContinuousBettingWheel: React.FC = () => {
     setShowBetPopup(true);
   };
 
+  const handleAddBet = () => {
+    // Default bet amount to 1, or you can prompt user for custom amount
+    const defaultBetAmount = 1;
+    
+    if (!playerName?.trim()) {
+      alert("Please enter your name first");
+      return;
+    }
+    
+    if ((walletBalance ?? 0) < defaultBetAmount) {
+      setShowInsufficient(true);
+      return;
+    }
+    
+    setPendingBet(defaultBetAmount);
+    setShowBetPopup(true);
+  };
+
   const confirmBet = async () => {
     if (!pendingBet) return;
     setShowBetPopup(false);
@@ -89,7 +107,11 @@ const ContinuousBettingWheel: React.FC = () => {
       }
 
       const result = await joinGame((playerName ?? "").trim(), pendingBet);
-      if (result.success) setHasJoined(true);
+      if (result.success) {
+        setHasJoined(true);
+        // Refresh wallet balance after successful bet
+        await fetchWalletBalance();
+      }
     } catch (err) {
       alert("Error joining game.");
     } finally {
@@ -208,7 +230,7 @@ const ContinuousBettingWheel: React.FC = () => {
       >
         Test Popup
       </button>
-      //
+      
       <button
         onClick={() => {
           setShowWinPopup(true); // Show Win Popup
@@ -235,6 +257,11 @@ const ContinuousBettingWheel: React.FC = () => {
           players={gameState?.players || []}
           currentWinnerId={gameState?.winner?.id}
           isSpinning={gameState?.phase === "spinning"}
+          walletBalance={walletBalance}
+          onAddBet={handleAddBet}
+          onQuickBet={handleQuickBet}
+          timeLeft={gameState?.timeLeft ?? 0}
+          gameState={gameState}
         />
       </div>
     </div>

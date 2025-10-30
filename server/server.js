@@ -856,6 +856,7 @@ app.post("/api/createUserGame", async (req, res) => {
       `${GAMEON_BACKEND_URL}/api/sdk/v1/game-session/create-user-game-sessionv2`,
       payload,
     );
+    console.log("Release response:", releaseResponse.data);
 
     if (!releaseResponse.data?.status) {
       return res.status(500).json({
