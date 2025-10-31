@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import SlotMachineReel from "./subcomponents/SlotMachineReel";
-import type { GameState, Winner } from "../../../lib/types"
+import type { GameState, Winner } from "../../../lib/types";
 interface Player {
   id: string;
   name: string;
@@ -71,34 +71,34 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const formatNumber = (amount: number) =>
     new Intl.NumberFormat("en-IN", { minimumFractionDigits: 0 }).format(amount);
 
-  const [winners, setWinners] = useState<Winner[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [winners, setWinners] = useState<Winner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchWinners()
+    fetchWinners();
     // Refresh winners every 30 seconds
-    const interval = setInterval(fetchWinners, 30000)
-    return () => clearInterval(interval)
-  }, [])
+    const interval = setInterval(fetchWinners, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const fetchWinners = async () => {
     try {
-      const response = await fetch("/api/winners")
-      const data = await response.json()
+      const response = await fetch("/api/winners");
+      const data = await response.json();
 
       if (data.success) {
-        setWinners(data.winners)
-        setError(null)
+        setWinners(data.winners);
+        setError(null);
       } else {
-        setError("Failed to load winners")
+        setError("Failed to load winners");
       }
     } catch (err) {
-      setError("Failed to load winners")
+      setError("Failed to load winners");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="relative w-full max-w-3xl mx-auto p-4">
@@ -117,7 +117,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
           {/* 💰 Balance Amount */}
           <span className="text-[30px] md:text-[0px] leading-none font-bungee text-white drop-shadow-[4px_4px_0_#4E2A0B] mt-[20px]">
-            {walletBalance?.toFixed(2) ?? '0.00'}
+            {walletBalance?.toFixed(2) ?? "0.00"}
           </span>
         </div>
 
@@ -139,9 +139,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             className="drop-shadow-lg select-none pointer-events-none max-w-[90%] h-auto z-10 mt-[1px]"
           />
 
-          <SlotMachineReel players={players} isSpinning={shouldSpin || isSpinning} />
-
-
+          <SlotMachineReel
+            players={players}
+            isSpinning={shouldSpin || isSpinning}
+          />
         </div>
 
         {/* === Action Buttons (Below Slot Machine) === */}
@@ -193,8 +194,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             />
 
             {/* 🕒 Text Overlay (Inside white area) */}
-            <div className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300`}>
-              <span className={`font-bungee text-sm tracking-wide leading-none mb-1 mt-3 transition-colors duration-300 text-[#A35B1B]`}>
+            <div
+              className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300`}
+            >
+              <span
+                className={`font-bungee text-sm tracking-wide leading-none mb-1 mt-3 transition-colors duration-300 text-[#A35B1B]`}
+              >
                 PRICE POOL
               </span>
 
@@ -204,16 +209,17 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                   alt="coin"
                   className="w-8 h-8 md:w-7 md:h-7 object-contain"
                 />
-                <span className={`font-bungee text-3xl leading-none transition-colors duration-300 text-[#4E2A0B]`}>
-                  {formatNumber((gameState?.totalPot ?? 0))}
-
+                <span
+                  className={`font-bungee text-3xl leading-none transition-colors duration-300 text-[#4E2A0B]`}
+                >
+                  {formatNumber(gameState?.totalPot ?? 0)}
                 </span>
               </div>
             </div>
-            
+
             {/* === Active Players Section === */}
             {gameState && gameState.players.length > 0 && (
-              <div className="relative w-full flex justify-center mt-60">
+              <div className="relative w-full flex justify-center mt-60 mb-48">
                 {/* 🟤 Background */}
 
                 <div className="relative w-screen -mx-15 h-auto">
@@ -228,7 +234,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
                   {/* === Content Overlay === */}
                   <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-
                     {/* 🏷️ Header */}
                     <div className="px-5 py-8 mb-10">
                       <span className="font-bungee text-white text-lg md:text-xl drop-shadow-[2px_2px_0_#4E2A0B]">
@@ -272,7 +277,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             )}
 
             {/* === Past Winners Section === */}
-            <div className="relative w-full flex justify-center mt-60">
+            <div className="relative w-full flex justify-center mt-130">
               {/* 🟤 Background */}
               <div className="relative w-screen -mx-15 h-auto">
                 <img
@@ -337,7 +342,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       </div>
                     </div>
                   )}
-
                 </div>
               </div>
             </div>
@@ -349,5 +353,3 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 };
 
 export default SlotMachine;
-
-
