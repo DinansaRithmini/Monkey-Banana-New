@@ -1,57 +1,63 @@
 "use client";
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
-interface WinPageProps {
-  amount: number;
+interface WinPopupProps {
   show: boolean;
-  isWinner: boolean;
+  amount: number;
   onClose: () => void;
-
 }
 
-const WinPage: React.FC<WinPageProps> = ({ amount,show,isWinner, onClose }) => {
-  const router = useRouter();
-
+const WinPopup: React.FC<WinPopupProps> = ({ show, amount, onClose }) => {
   if (!show) return null;
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: "url('/images/win_background.png')", // Win background image
-        backgroundSize: "cover",
-      }}
+      className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden"
+      onClick={onClose}
     >
-      <div className="relative text-center z-10">
-        {/* Win Message */}
-        <h2 className="text-[#FFDD00] font-bungee text-5xl font-bold mb-4">
-          YOU WIN!
-        </h2>
+      {/* Black blurred background (lowest layer) */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[6px] z-0 animate-fadeIn"></div>
 
-        {/* Amount Won */}
-        <div className="text-[#FFDD00] font-bungee text-3xl mb-4">
-          <span className="font-bold">{amount}</span> Coins
+      {/* Flying coins above the blur */}
+      <img
+        src="/images/coins_flying.png"
+        alt="Flying Coins"
+        className="absolute inset-0 w-full h-full object-cover opacity-90 pointer-events-none z-10 animate-slowFloat"
+      />
+
+      {/* Centered win popup card with animation */}
+      <div
+        className="relative w-[420px] h-[400px] bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center rounded-xl shadow-lg drop-shadow-[0_0_30px_#FFD85A] z-20 animate-popupIn"
+        style={{
+          backgroundImage: "url('/images/win_background.png')",
+          backgroundSize: "40%",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col items-center justify-center h-full text-center relative z-10">
+          <h2
+            className="text-[#FFDD00] text-4xl font-bungee leading-tight mb-3 mt-[60px]"
+            style={{
+              textShadow: `
+                0 0 5px #714023,
+                2px 2px 5px #714023,
+                -2px -2px 5px #714023,
+                -2px 2px 5px #714023,
+                2px -2px 5px #714023
+              `,
+            }}
+          >
+            YOU WIN!
+          </h2>
+
+         
+          
         </div>
-
-        {/* Celebratory Animation or Images */}
-        <img
-          src="/images/celebration.png"
-          alt="Celebration"
-          className="mx-auto mb-6 w-[150px] h-[150px]"
-        />
-
-        {/* Button to go back to Home or Any Action */}
-        <Button
-          onClick={onClose}
-          className="bg-[#FFDD00] text-white font-bungee text-lg py-2 px-6 rounded-lg hover:bg-yellow-300 transition-all"
-        >
-          GO HOME
-        </Button>
       </div>
     </div>
   );
 };
 
-export default WinPage;
+export default WinPopup;

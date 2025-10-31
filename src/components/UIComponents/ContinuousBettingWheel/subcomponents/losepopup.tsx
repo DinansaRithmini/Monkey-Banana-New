@@ -1,76 +1,96 @@
 "use client";
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
-interface LosePopupProps {
-  show: boolean;
+interface LosePageProps {
   amount: number;
-  isLoser: boolean;
+  show: boolean;
+  isWinner: boolean;
   onClose: () => void;
 }
 
-const LosePopup: React.FC<LosePopupProps> = ({ show, amount,isLoser, onClose }) => {
+const LosePage: React.FC<LosePageProps> = ({
+  amount,
+  show,
+  isWinner,
+  onClose,
+}) => {
+  const router = useRouter();
+
+  if (!show) return null;
+
   return (
     <div
-      className={`fixed inset-0 flex items-center justify-center transition-opacity duration-300 ${
-        show ? "opacity-100 pointer-events-auto bg-black/70 z-50" : "opacity-0 pointer-events-none"
-      }`}
+      className="fixed inset-0 flex items-center justify-center z-50 overflow-hidden"
       onClick={onClose}
     >
-      {/* Popup Card */}
+      {/* 🔹 Black blurred background overlay */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[6px] z-0"></div>
+
+      {/* 🔹 Pure CSS glow background (no image) */}
       <div
-        className="relative w-[420px] h-[380px] bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center rounded-xl shadow-lg drop-shadow-[0_0_25px_#FFD85A] transition-transform duration-300 scale-100"
+        className="absolute rounded-full blur-[120px] opacity-70 z-10"
         style={{
-          backgroundImage: "url('/images/lose_background.png')", // Adjust the background for lose scenario
+          width: "500px",
+          height: "500px",
+          background: "radial-gradient(circle, #FFD85A 0%, #FFBB13 40%, transparent 70%)",
+          filter: "blur(100px)",
         }}
+      ></div>
+
+      {/* 🔹 Lose background (above the glow) */}
+      <img
+        src="/images/Lose_background.png"
+        alt="Lose Background"
+        className="absolute w-[250px] h-[250px] object-contain pointer-events-none z-20"
+        style={{
+          transform: "translateY(40px)",
+        }}
+      />
+
+      {/* 🔹 Popup content */}
+      <div
+        className="relative w-[420px] h-[400px] flex flex-col items-center justify-center text-center z-30 animate-popupIn"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Background rays effect */}
-        <div className="absolute inset-0 bg-gradient-to-t from-red-400 via-red-500 to-transparent opacity-50"></div>
-
-        {/* Popup Content */}
-        <div className="flex flex-col items-center justify-center h-full text-center relative z-10">
-          {/* Title */}
-          <h2 className="text-[#FFDD00] text-5xl font-bungee font-bold mb-4">
-            YOU LOSE
-          </h2>
-
-          {/* Amount lost */}
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <img
-              src="/images/gameon_chip.png"
-              alt="Gameon Chip"
-              className="w-[40px] h-[40px]"
-            />
-            <span className="text-[#FFDD00] font-bungee text-3xl font-bold">
-              {amount} Coins
-            </span>
-          </div>
-
-          {/* Coin Animation */}
-          <div className="flex justify-center space-x-4">
-            <img
-              src="/images/gold_coin.png"
-              alt="Gold Coin"
-              className="w-[60px] h-[60px] animate-bounce"
-            />
-            <img
-              src="/images/gold_coin.png"
-              alt="Gold Coin"
-              className="w-[60px] h-[60px] animate-bounce"
-            />
-          </div>
-
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="mt-4 py-2 px-6 bg-[#FFDD00] text-white rounded-lg font-bungee text-lg hover:bg-yellow-300 transition-all"
+        <h2 className="text-6xl font-bungee leading-tight mb-3 mt-[60px]">
+          <span
+            style={{
+              color: "#FFC434",
+              textShadow: `
+                3px 3px 8px #714023,
+                -3px -3px 8px #714023,
+                -3px 3px 8px #714023,
+                3px -3px 8px #714023,
+                0 0 8px #714023,
+                0 0 20px #FFC434,
+                0 0 40px #FFC434
+              `,
+            }}
           >
-            CLOSE
-          </button>
-        </div>
+            YOU
+          </span>{" "}
+          <span
+            style={{
+              color: "#A96229",
+              textShadow: `
+                3px 3px 8px #714023,
+                -3px -3px 8px #714023,
+                -3px 3px 8px #714023,
+                3px -3px 8px #714023,
+                0 0 8px #714023,
+                0 0 20px #FFC434,
+                0 0 40px #FFC434
+              `,
+            }}
+          >
+            LOSE!
+          </span>
+        </h2>
       </div>
     </div>
   );
 };
 
-export default LosePopup;
+export default LosePage;
