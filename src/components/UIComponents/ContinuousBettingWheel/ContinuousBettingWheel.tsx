@@ -40,6 +40,7 @@ const ContinuousBettingWheel: React.FC = () => {
   const [showWinPopup, setShowWinPopup] = useState(false);
   const [showLosePopup, setShowLosePopup] = useState(false);
   const [showJackpotPopup, setShowJackpotPopup] = useState(false);
+  const [previousPhase, setPreviousPhase] = useState<string | null>(null);
 
   const { width, height } = useWindowSize();
 
@@ -123,30 +124,57 @@ const ContinuousBettingWheel: React.FC = () => {
   };
 
   useEffect(() => {
-    if (gameState?.phase === "finished" && userId) {
+    // Detect phase transition from spinning to finished
+    if (
+      previousPhase === "spinning" && 
+      gameState?.phase === "finished" && 
+      userId
+    ) {
       const isUserWinner = gameState.winner?.id === userId;
+      const userParticipated = gameState.players.some((p) => p.id === userId);
+      
       setIsWinner(isUserWinner);
       setShowResult(true);
 
-      // Show appropriate popup
-      if (isUserWinner) {
-        setShowWinPopup(true);
-        setShowLosePopup(false);
-      } else {
-        // Only show lose popup if user actually participated
-        const userParticipated = gameState.players.some((p) => p.id === userId);
-        if (userParticipated) {
+      // Wait 2 seconds after spin stops to let user see who won
+      setTimeout(() => {
+        // Show appropriate popup based on user's status
+        if (isUserWinner) {
+          // User won - show win popup only
+          setShowWinPopup(true);
+          setShowLosePopup(false);
+          
+          // Auto-close win popup after 3 seconds
+          setTimeout(() => {
+            setShowWinPopup(false);
+          }, 3000);
+        } else if (userParticipated) {
+          // User participated but didn't win - show lose popup only
           setShowWinPopup(false);
           setShowLosePopup(true);
+          
+          // Auto-close lose popup after 3 seconds
+          setTimeout(() => {
+            setShowLosePopup(false);
+          }, 3000);
+        } else {
+          // User didn't participate - don't show any popup
+          setShowWinPopup(false);
+          setShowLosePopup(false);
         }
-      }
+      }, 2000); // 2 second delay to show the winner
 
-      // Auto-close result display after 6 seconds
+      // Auto-close result display after 8 seconds (2s delay + 3s popup + 3s buffer)
       setTimeout(() => {
         setShowResult(false);
-      }, 6000);
+      }, 8000);
     }
-  }, [gameState?.phase, userId]);
+
+    // Update previous phase for next comparison
+    if (gameState?.phase) {
+      setPreviousPhase(gameState.phase);
+    }
+  }, [gameState?.phase, previousPhase, userId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

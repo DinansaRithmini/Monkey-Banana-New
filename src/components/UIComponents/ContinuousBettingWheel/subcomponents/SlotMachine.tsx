@@ -56,7 +56,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   useEffect(() => {
     if (gameState?.phase === "spinning") {
       setShouldSpin(true);
-    } else if (gameState?.phase === "betting") {
+    } else if (gameState?.phase === "betting" || gameState?.phase === "finished") {
       setShouldSpin(false);
     }
   }, [gameState?.phase]);
@@ -142,6 +142,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           <SlotMachineReel
             players={players}
             isSpinning={shouldSpin || isSpinning}
+            winnerId={currentWinnerId}
           />
         </div>
 

@@ -10,9 +10,10 @@ interface Player {
 interface SlotMachineReelProps {
   players: Player[];
   isSpinning: boolean;
+  winnerId?: string | null;
 }
 
-const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning }) => {
+const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, winnerId }) => {
   const [displayPlayers, setDisplayPlayers] = useState(players);
   const [spinSpeed, setSpinSpeed] = useState(150); // Mid-fast constant speed
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -22,9 +23,36 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning }
   // Update display players when the players prop changes (but not while spinning)
   useEffect(() => {
     if (!isSpinning) {
-      setDisplayPlayers(players);
+      // If there's a winner, arrange players so winner is in the middle (index 1)
+      if (winnerId && players.length > 0) {
+        const winnerIndex = players.findIndex(p => p.id === winnerId);
+        if (winnerIndex !== -1) {
+          // Create a new array with winner at position 1 (middle)
+          const reorderedPlayers = [...players];
+          // Move winner to index 1
+          const winner = reorderedPlayers.splice(winnerIndex, 1)[0];
+          
+          // Create array with winner in middle
+          if (reorderedPlayers.length >= 2) {
+            // Put one player before, winner in middle, rest after
+            const beforeWinner = reorderedPlayers[0];
+            const afterWinner = reorderedPlayers.slice(1);
+            setDisplayPlayers([beforeWinner, winner, ...afterWinner]);
+          } else if (reorderedPlayers.length === 1) {
+            // Only 2 players total - put the other one first
+            setDisplayPlayers([reorderedPlayers[0], winner, reorderedPlayers[0]]);
+          } else {
+            // Only 1 player (the winner)
+            setDisplayPlayers([winner, winner, winner]);
+          }
+        } else {
+          setDisplayPlayers(players);
+        }
+      } else {
+        setDisplayPlayers(players);
+      }
     }
-  }, [players, isSpinning]);
+  }, [players, isSpinning, winnerId]);
 
   // 🎰 Smooth continuous spinning animation
   useEffect(() => {
