@@ -43,12 +43,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     if (previousTimeLeft > 0 && timeLeft === 0 && !shouldSpin) {
       setShouldSpin(true);
     }
-    
+
     // Reset spin state when new round starts (timer resets)
     if (timeLeft > previousTimeLeft) {
       setShouldSpin(false);
     }
-    
+
     setPreviousTimeLeft(timeLeft);
   }, [timeLeft, previousTimeLeft, shouldSpin]);
 
@@ -67,6 +67,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
+
+  const formatNumber = (amount: number) =>
+    new Intl.NumberFormat("en-IN", { minimumFractionDigits: 0 }).format(amount);
 
   const [winners, setWinners] = useState<Winner[]>([])
   const [loading, setLoading] = useState(true)
@@ -190,26 +193,24 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             />
 
             {/* 🕒 Text Overlay (Inside white area) */}
-            <div className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300 ${
-              timeLeft <= 3 && timeLeft > 0 ? 'animate-pulse scale-110' : ''
-            }`}>
-              <span className={`font-bungee text-sm tracking-wide leading-none mb-1 transition-colors duration-300 ${
-                timeLeft <= 3 && timeLeft > 0 ? 'text-red-600' : 'text-[#A35B1B]'
-              }`}>
-                TIME REMAINING
+            <div className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300`}>
+              <span className={`font-bungee text-sm tracking-wide leading-none mb-1 mt-3 transition-colors duration-300 text-[#A35B1B]`}>
+                PRICE POOL
               </span>
-              <span className={`font-bungee text-3xl leading-none transition-colors duration-300 ${
-                timeLeft <= 3 && timeLeft > 0 ? 'text-red-700' : 'text-[#4E2A0B]'
-              }`}>
-                {formatTime(timeLeft)}
-              </span>
-              {timeLeft === 0 && shouldSpin && (
-                <span className="font-bungee text-sm text-yellow-600 animate-bounce mt-1">
-                  SPINNING!
-                </span>
-              )}
-            </div>
 
+              <div className="flex items-center justify-center gap-2">
+                <img
+                  src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                  alt="coin"
+                  className="w-8 h-8 md:w-7 md:h-7 object-contain"
+                />
+                <span className={`font-bungee text-3xl leading-none transition-colors duration-300 text-[#4E2A0B]`}>
+                  {formatNumber((gameState?.totalPot ?? 0))}
+
+                </span>
+              </div>
+            </div>
+            
             {/* === Active Players Section === */}
             {gameState && gameState.players.length > 0 && (
               <div className="relative w-full flex justify-center mt-60">
@@ -348,3 +349,5 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 };
 
 export default SlotMachine;
+
+

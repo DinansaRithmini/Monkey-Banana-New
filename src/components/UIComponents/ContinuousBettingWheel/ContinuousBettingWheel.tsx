@@ -224,7 +224,7 @@ const ContinuousBettingWheel: React.FC = () => {
       />
       <JackpotPopup
         show={showJackpotPopup}
-        amount={gameState?.jackpotAmount ?? 0}
+        amount={gameState?.totalPot ?? 0}
         onClose={() => setShowJackpotPopup(false)}
       />
 
