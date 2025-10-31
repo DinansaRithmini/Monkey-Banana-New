@@ -124,9 +124,26 @@ const ContinuousBettingWheel: React.FC = () => {
       const isUserWinner = gameState.winner?.id === userId;
       setIsWinner(isUserWinner);
       setShowResult(true);
-      setTimeout(() => setShowResult(false), 6000);
+      
+      // Show appropriate popup
+      if (isUserWinner) {
+        setShowWinPopup(true);
+        setShowLosePopup(false);
+      } else {
+        // Only show lose popup if user actually participated
+        const userParticipated = gameState.players.some(p => p.id === userId);
+        if (userParticipated) {
+          setShowWinPopup(false);
+          setShowLosePopup(true);
+        }
+      }
+      
+      // Auto-close result display after 6 seconds
+      setTimeout(() => {
+        setShowResult(false);
+      }, 6000);
     }
-  }, [gameState?.phase]);
+  }, [gameState?.phase, userId]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -194,14 +211,12 @@ const ContinuousBettingWheel: React.FC = () => {
       />
       <WinPopup
         show={showWinPopup}
-        isWinner={false}
-        amount={34}
+        amount={gameState?.totalPot ?? 0}
         onClose={() => setShowWinPopup(false)}
       />
       <LosePopup
         show={showLosePopup}
-        isLoser={false}
-        amount={23}
+        amount={gameState?.players.find(p => p.id === userId)?.amount ?? 0}
         onClose={() => setShowLosePopup(false)}
       />
       {/* Header Section */}

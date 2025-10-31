@@ -34,6 +34,33 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const currentPlayer =
     players.find((p) => p.id === currentWinnerId) || players[0];
 
+  // Track when spinning should start
+  const [shouldSpin, setShouldSpin] = useState(false);
+  const [previousTimeLeft, setPreviousTimeLeft] = useState(timeLeft);
+
+  // Trigger spinning when timer hits 0
+  useEffect(() => {
+    if (previousTimeLeft > 0 && timeLeft === 0 && !shouldSpin) {
+      setShouldSpin(true);
+    }
+    
+    // Reset spin state when new round starts (timer resets)
+    if (timeLeft > previousTimeLeft) {
+      setShouldSpin(false);
+    }
+    
+    setPreviousTimeLeft(timeLeft);
+  }, [timeLeft, previousTimeLeft, shouldSpin]);
+
+  // Also handle spinning state from gameState
+  useEffect(() => {
+    if (gameState?.phase === "spinning") {
+      setShouldSpin(true);
+    } else if (gameState?.phase === "betting") {
+      setShouldSpin(false);
+    }
+  }, [gameState?.phase]);
+
   // Format time from seconds to MM:SS
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -75,9 +102,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
       {/* Slot machine container */}
       <div className="relative flex flex-col items-center">
         {/* === Total Coin Balance (Above Slot Machine) === */}
-        <div className="flex items-center justify-center gap-2 mb-3 mt-2">
+        <div className="flex items-center justify-center gap-2 mb-6 mt-2">
           {/* 🪙 Coin Circle */}
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#F7A531] flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.3)] mt-[40px]">
+          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#F7A531] flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.3)] mt-[20px]">
             <img
               src="/images/gameon_chip.png"
               alt="coin"
@@ -106,10 +133,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           <img
             src="/images/slot_machine.gif"
             alt="Slot Machine"
-            className="drop-shadow-lg select-none pointer-events-none max-w-[100%] h-auto z-10 mt-[1px]"
+            className="drop-shadow-lg select-none pointer-events-none max-w-[90%] h-auto z-10 mt-[1px]"
           />
 
-          <SlotMachineReel players={players} isSpinning={isSpinning} />
+          <SlotMachineReel players={players} isSpinning={shouldSpin || isSpinning} />
 
 
         </div>
@@ -163,13 +190,24 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             />
 
             {/* 🕒 Text Overlay (Inside white area) */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px]">
-              <span className="text-[#A35B1B] font-bungee text-sm tracking-wide leading-none mb-1">
+            <div className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300 ${
+              timeLeft <= 3 && timeLeft > 0 ? 'animate-pulse scale-110' : ''
+            }`}>
+              <span className={`font-bungee text-sm tracking-wide leading-none mb-1 transition-colors duration-300 ${
+                timeLeft <= 3 && timeLeft > 0 ? 'text-red-600' : 'text-[#A35B1B]'
+              }`}>
                 TIME REMAINING
               </span>
-              <span className="text-[#4E2A0B] font-bungee text-3xl leading-none">
+              <span className={`font-bungee text-3xl leading-none transition-colors duration-300 ${
+                timeLeft <= 3 && timeLeft > 0 ? 'text-red-700' : 'text-[#4E2A0B]'
+              }`}>
                 {formatTime(timeLeft)}
               </span>
+              {timeLeft === 0 && shouldSpin && (
+                <span className="font-bungee text-sm text-yellow-600 animate-bounce mt-1">
+                  SPINNING!
+                </span>
+              )}
             </div>
 
             {/* === Active Players Section === */}
@@ -241,7 +279,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                   alt="Past Winners Background"
                   className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
                   style={{
-                    minHeight: "520px",
+                    minHeight: "50px",
                   }}
                 />
 

@@ -6,14 +6,12 @@ import { useRouter } from "next/navigation";
 interface LosePageProps {
   amount: number;
   show: boolean;
-  isWinner: boolean;
   onClose: () => void;
 }
 
 const LosePage: React.FC<LosePageProps> = ({
   amount,
   show,
-  isWinner,
   onClose,
 }) => {
   const router = useRouter();
