@@ -298,6 +298,14 @@ const ContinuousBettingWheel: React.FC = () => {
           gameState={gameState}
         />
       </div>
+      {/* Prize Pool Timer (below the prize pool / slot machine) */}
+      <div className="flex flex-col items-center justify-center mt-1">
+        <div className="flex flex-col items-center justify-center mt-1">
+          <span className="font-bungee text-3xl text-[#FFFFF]">
+            {formatTime(gameState?.timeLeft ?? 0)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 };
