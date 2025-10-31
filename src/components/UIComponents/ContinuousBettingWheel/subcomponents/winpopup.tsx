@@ -29,7 +29,8 @@ const WinPopup: React.FC<WinPopupProps> = ({ show, amount, onClose }) => {
           WebkitMaskImage:
             "radial-gradient(circle at center, black 60%, transparent 100%)",
           filter: "blur(0px)",
-          transform: "scale(1.3) translateY(60px)",
+          transform: "scale(1.3) translateY(80px)", // keep or fine-tune
+          backgroundPosition: "center -90px", // 👈 moves beam origin lower
         }}
       ></div>
 
@@ -38,7 +39,7 @@ const WinPopup: React.FC<WinPopupProps> = ({ show, amount, onClose }) => {
         className="relative w-[420px] h-[400px] flex flex-col items-center justify-center rounded-xl shadow-lg drop-shadow-[0_0_30px_#FFD85A] z-20 animate-popupIn"
         style={{
           backgroundImage: "url('/images/win_background.png')",
-          backgroundSize: "40%",
+          backgroundSize: "80%",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
         }}

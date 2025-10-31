@@ -9,11 +9,7 @@ interface LosePageProps {
   onClose: () => void;
 }
 
-const LosePage: React.FC<LosePageProps> = ({
-  amount,
-  show,
-  onClose,
-}) => {
+const LosePage: React.FC<LosePageProps> = ({ amount, show, onClose }) => {
   const router = useRouter();
 
   if (!show) return null;
@@ -32,7 +28,8 @@ const LosePage: React.FC<LosePageProps> = ({
         style={{
           width: "500px",
           height: "500px",
-          background: "radial-gradient(circle, #FFD85A 0%, #FFBB13 40%, transparent 70%)",
+          background:
+            "radial-gradient(circle, #FFD85A 0%, #FFBB13 40%, transparent 70%)",
           filter: "blur(100px)",
         }}
       ></div>
@@ -55,35 +52,23 @@ const LosePage: React.FC<LosePageProps> = ({
         <h2 className="text-6xl font-bungee leading-tight mb-3 mt-[60px]">
           <span
             style={{
-              color: "#FFC434",
-              textShadow: `
-                3px 3px 8px #714023,
-                -3px -3px 8px #714023,
-                -3px 3px 8px #714023,
-                3px -3px 8px #714023,
-                0 0 8px #714023,
-                0 0 20px #FFC434,
-                0 0 40px #FFC434
-              `,
+              color: "#FFC434", // gold fill
+              WebkitTextStroke: "15px #714023", // solid brown border
+              WebkitTextFillColor: "#FFC434", // ensure solid inner color
+              paintOrder: "stroke fill", // clean border behind fill
             }}
           >
             YOU
           </span>{" "}
           <span
             style={{
-              color: "#A96229",
-              textShadow: `
-                3px 3px 8px #714023,
-                -3px -3px 8px #714023,
-                -3px 3px 8px #714023,
-                3px -3px 8px #714023,
-                0 0 8px #714023,
-                0 0 20px #FFC434,
-                0 0 40px #FFC434
-              `,
+              color: "#A96229", // brown fill
+              WebkitTextStroke: "15px #714023", // solid brown border
+              WebkitTextFillColor: "#A96229",
+              paintOrder: "stroke fill",
             }}
           >
-            LOSE!
+            LOSE
           </span>
         </h2>
       </div>

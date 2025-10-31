@@ -35,7 +35,7 @@ const InsufficientPopup: React.FC<InsufficientPopupProps> = ({
           </h2>
 
           {/* Description */}
-          <p className="text-[#5E5E5E] font-medium text-sm px-8 mb-3 mt-[20px]">
+          <p className="text-[#5E5E5E] font-medium text-l px-8 mb-3 mt-[20px]">
             Your Wallet doesn’t have <br />
             enough coins to place <br />
             this bet.

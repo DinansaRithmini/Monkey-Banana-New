@@ -9,6 +9,8 @@ import SlotMachine from "./subcomponents/SlotMachine";
 //import ResultPopup from "./subcomponents/ResultPopup";
 import InsufficientPopup from "./subcomponents/InsufficientPopup";
 import BetConfirmationPopup from "./subcomponents/BetConfirmationPopup";
+import JackpotPopup from "./subcomponents/jackpot";
+
 import { Button } from "@/components/ui/button";
 
 import WinPopup from "./subcomponents/winpopup";
@@ -37,6 +39,7 @@ const ContinuousBettingWheel: React.FC = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [showWinPopup, setShowWinPopup] = useState(false);
   const [showLosePopup, setShowLosePopup] = useState(false);
+  const [showJackpotPopup, setShowJackpotPopup] = useState(false);
 
   const { width, height } = useWindowSize();
 
@@ -71,17 +74,17 @@ const ContinuousBettingWheel: React.FC = () => {
   const handleAddBet = () => {
     // Default bet amount to 1, or you can prompt user for custom amount
     const defaultBetAmount = 1;
-    
+
     if (!playerName?.trim()) {
       alert("Please enter your name first");
       return;
     }
-    
+
     if ((walletBalance ?? 0) < defaultBetAmount) {
       setShowInsufficient(true);
       return;
     }
-    
+
     setPendingBet(defaultBetAmount);
     setShowBetPopup(true);
   };
@@ -124,20 +127,20 @@ const ContinuousBettingWheel: React.FC = () => {
       const isUserWinner = gameState.winner?.id === userId;
       setIsWinner(isUserWinner);
       setShowResult(true);
-      
+
       // Show appropriate popup
       if (isUserWinner) {
         setShowWinPopup(true);
         setShowLosePopup(false);
       } else {
         // Only show lose popup if user actually participated
-        const userParticipated = gameState.players.some(p => p.id === userId);
+        const userParticipated = gameState.players.some((p) => p.id === userId);
         if (userParticipated) {
           setShowWinPopup(false);
           setShowLosePopup(true);
         }
       }
-      
+
       // Auto-close result display after 6 seconds
       setTimeout(() => {
         setShowResult(false);
@@ -216,9 +219,15 @@ const ContinuousBettingWheel: React.FC = () => {
       />
       <LosePopup
         show={showLosePopup}
-        amount={gameState?.players.find(p => p.id === userId)?.amount ?? 0}
+        amount={gameState?.players.find((p) => p.id === userId)?.amount ?? 0}
         onClose={() => setShowLosePopup(false)}
       />
+      <JackpotPopup
+        show={showJackpotPopup}
+        amount={gameState?.jackpotAmount ?? 0}
+        onClose={() => setShowJackpotPopup(false)}
+      />
+
       {/* Header Section */}
       <div className="relative w-full flex justify-center items-start pt-8 pb-2">
         <div className="relative flex flex-col items-center text-center">
@@ -245,7 +254,17 @@ const ContinuousBettingWheel: React.FC = () => {
       >
         Test Popup
       </button>
-      
+      <button
+        onClick={() => {
+          setShowWinPopup(false);
+          setShowLosePopup(false);
+          setShowJackpotPopup(true);
+        }}
+        className="bg-[#FFD700] text-[#4E2A0B] font-semibold py-2 px-6 rounded-lg shadow-lg hover:bg-[#FFE85C] transition-all ml-4"
+      >
+        Test Jack Popup
+      </button>
+
       <button
         onClick={() => {
           setShowWinPopup(true); // Show Win Popup
