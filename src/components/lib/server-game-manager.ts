@@ -105,6 +105,7 @@ class ServerGameManager {
       bettingStartTime: Date.now(),
       roundNumber: latestRound + 1,
       isActive: true,
+      activePlayers: 0,
     }
 
     this.winnerSaved = false
@@ -187,7 +188,8 @@ class ServerGameManager {
       createdAt: new Date(dbGame.createdAt).getTime(),
       bettingStartTime: new Date(dbGame.bettingStartTime).getTime(),
       roundNumber: dbGame.roundNumber,
-      isActive: dbGame.isActive
+      isActive: dbGame.isActive,
+      activePlayers: dbGame.activePlayers
     }
   }
 
@@ -272,11 +274,11 @@ class ServerGameManager {
       );
 
       // Send notification if there are outbidded players
-      if (outbiddedPlayers.length > 0) {
-        const outbiddedUuids = outbiddedPlayers.map(p => p.id);
-        console.log(`Player ${existingPlayer.name} increased bet to ${newTotalAmount}, notifying ${outbiddedPlayers.length} outbid players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
-        await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
-      }
+      // if (outbiddedPlayers.length > 0) {
+      //   const outbiddedUuids = outbiddedPlayers.map(p => p.id);
+      //   console.log(`Player ${existingPlayer.name} increased bet to ${newTotalAmount}, notifying ${outbiddedPlayers.length} outbid players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
+      //   await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
+      // }
 
       existingPlayer.amount += newBetAmount;
       this.game.totalPot += newBetAmount;
@@ -313,11 +315,11 @@ class ServerGameManager {
       );
 
       // Send notification if there are outbidded players
-      if (outbiddedPlayers.length > 0) {
-        const outbiddedUuids = outbiddedPlayers.map(p => p.id);
-        console.log(`New player ${newPlayer.name} with bet ${newBetAmount} outbid ${outbiddedPlayers.length} players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
-        await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
-      }
+      // if (outbiddedPlayers.length > 0) {
+      //   const outbiddedUuids = outbiddedPlayers.map(p => p.id);
+      //   console.log(`New player ${newPlayer.name} with bet ${newBetAmount} outbid ${outbiddedPlayers.length} players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
+      //   await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
+      // }
     }
 
     this.game.players.push(newPlayer)
@@ -610,21 +612,21 @@ class ServerGameManager {
           body: JSON.stringify({
             uuid: this.game.winner.id,
             actionType: "WIN",
-            amount: winnings + 100,
+            amount: winnings,
             sessionUuid: this.game.roundNumber,
           }),
         });
 
         //Award airdrop points
-        await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uuid: this.game.winner.id,
-          }),
-        });
+        // await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     uuid: this.game.winner.id,
+        //   }),
+        // });
       }
       
       // Mark coin actions as processed

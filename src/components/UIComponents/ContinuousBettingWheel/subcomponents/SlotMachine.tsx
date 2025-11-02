@@ -41,6 +41,8 @@ interface SlotMachineProps {
   onQuickBet: (amount: number) => void;
   timeLeft: number;
   gameState: GameState | null;
+  playerName: string | null;
+  hasJoined: boolean;
 }
 
 const SlotMachine: React.FC<SlotMachineProps> = ({
@@ -52,6 +54,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   onQuickBet,
   timeLeft,
   gameState,
+  playerName,
+  hasJoined,
 }) => {
   // Select current player (winner or fallback)
   const currentPlayer =
@@ -61,6 +65,26 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const [shouldSpin, setShouldSpin] = useState(false);
   const [previousTimeLeft, setPreviousTimeLeft] = useState(timeLeft);
   const [showAllWinners, setShowAllWinners] = useState(false);
+
+  const capitalizeFirstLetter = (str: string) =>
+    str.charAt(0).toUpperCase() + str.slice(1);
+
+  const getPhaseMessage = () => {
+    if (!gameState) return "";
+
+    switch (gameState.phase) {
+      case "betting":
+        return `Place your wager!`;
+      case "spinning":
+        return `Spinning the wheel...`;
+      case "finished":
+        return `We have a winner!`;
+      case "round_ending":
+        return `No wager was placed`;
+      default:
+        return "";
+    }
+  };
 
   // Trigger spinning when timer hits 0
   useEffect(() => {
@@ -108,6 +132,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   useEffect(() => {
     setWinnerPage(0);
   }, [winners.length]);
+
+  // paging for active players (to match Past Players scroll behavior)
+  const [activePage, setActivePage] = useState(0);
+  const activePlayersPerPage = 3;
+  useEffect(() => {
+    setActivePage(0);
+  }, [gameState?.players.length]);
 
   useEffect(() => {
     fetchWinners();
@@ -185,46 +216,52 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           />
         </div>
 
-        {/* === Action Buttons (Below Slot Machine) === */}
-        <div className="flex justify-center items-center mt-6">
-          {/* Dark Brown Button - Quick Bet 1 */}
-          <button
-            onClick={() => onQuickBet(1)}
-            className="relative w-[200px] h-[60px] squishy z-10"
-          >
-            <img
-              src="/images/dark_brown_button.png"
-              alt="Dark Brown Button"
-              className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-            />
-            <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
-              <img
-                src="/images/gameon_chip.png"
-                alt="coin"
-                className="w-5 h-5 md:w-6 md:h-6 object-contain"
-              />
-              + 1
-            </span>
-          </button>
+        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mt-6">
+          Hey, {capitalizeFirstLetter(playerName ?? "")}. {getPhaseMessage()}
+        </h2>
 
-          {/* Light Brown Button - Add Bet */}
-          <button
-            onClick={onAddBet}
-            className="relative w-[200px] h-[60px] squishy -ml-[50px] z-0"
-          >
-            <img
-              src="/images/light_brown_button.png"
-              alt="Light Brown Button"
-              className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-            />
-            <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-2xl">
-              ADD
-            </span>
-          </button>
-        </div>
+        {/* === Action Buttons (Below Slot Machine) === */}
+        {gameState?.phase === "betting" && !hasJoined && (
+          <div className="flex justify-center items-center mt-6">
+            {/* Dark Brown Button - Quick Bet 1 */}
+            <button
+              onClick={() => onQuickBet(1)}
+              className="relative w-[200px] h-[60px] squishy z-10"
+            >
+              <img
+                src="/images/dark_brown_button.png"
+                alt="Dark Brown Button"
+                className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+              />
+              <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
+                <img
+                  src="/images/gameon_chip.png"
+                  alt="coin"
+                  className="w-5 h-5 md:w-6 md:h-6 object-contain"
+                />
+                + 1
+              </span>
+            </button>
+
+            {/* Light Brown Button - Add Bet */}
+            <button
+              onClick={onAddBet}
+              className="relative w-[200px] h-[60px] squishy -ml-[50px] z-0"
+            >
+              <img
+                src="/images/light_brown_button.png"
+                alt="Light Brown Button"
+                className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+              />
+              <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-2xl">
+                ADD
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* === Time Holder (Below Buttons) === */}
-        <div className="flex justify-center items-center mt-2">
+        <div className="flex justify-center items-center">
           <div className="relative w-[320px] h-[190px]">
             {/* Background image */}
             <img
@@ -287,34 +324,78 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                           ACTIVE PLAYERS
                         </span>
                       </div>
-                      <div className="w-full flex flex-col items-center gap-3">
-                        {gameState.players.map((player, index) => (
+                      {/* Container with paging for active players (matches Past Players) */}
+                      <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
+                        <div
+                          className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
+                          style={{
+                            maxHeight: "270px",
+                          }}
+                        >
                           <div
-                            key={index}
-                            className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
+                            className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
+                            style={{
+                              transform: `translateY(-${activePage * 270}px)`,
+                            }}
                           >
-                            <img
-                              src={player.profileImage}
-                              alt={player.name}
-                              className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
-                            />
-                            <div className="flex flex-col flex-grow">
-                              <span className="font-bungee text-white text-sm leading-tight">
-                                {player.name.toUpperCase()}
-                              </span>
-                              <div className="flex items-center gap-1">
+                            {gameState.players.map((player, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
+                              >
                                 <img
-                                  src="/images/gameon_chip.png"
-                                  alt="coin"
-                                  className="w-4 h-4 object-contain"
+                                  src={player.profileImage}
+                                  alt={player.name}
+                                  className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
                                 />
-                                <span className="text-[#FFD85A] font-bungee text-base">
-                                  {player.amount.toFixed(2)}
-                                </span>
+                                <div className="flex flex-col flex-grow">
+                                  <span className="font-bungee text-white text-sm leading-tight">
+                                    {player.name.toUpperCase()}
+                                  </span>
+                                  <div className="flex items-center gap-1">
+                                    <img
+                                      src="/images/gameon_chip.png"
+                                      alt="coin"
+                                      className="w-4 h-4 object-contain"
+                                    />
+                                    <span className="text-[#FFD85A] font-bungee text-base">
+                                      {player.amount.toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
+
+                        {/* ▼ Scroll Down Button for Active Players */}
+                        {gameState.players.length > activePlayersPerPage && (
+                          <button
+                            onClick={() =>
+                              setActivePage((prev) =>
+                                prev + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                                  ? 0
+                                  : prev + 1
+                              )
+                            }
+                            className="mt-3 ml-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={3}
+                              stroke="#341D1A"
+                              className="w-6 h-6 transition-transform duration-500 hover:translate-y-1"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -458,9 +539,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                               <div
                                 className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
                                 style={{
-                                  transform: `translateY(-${
-                                    winnerPage * 270
-                                  }px)`, // slide up each "page"
+                                  transform: `translateY(-${winnerPage * 270
+                                    }px)`, // slide up each "page"
                                 }}
                               >
                                 {winners.map((winner, index) => (

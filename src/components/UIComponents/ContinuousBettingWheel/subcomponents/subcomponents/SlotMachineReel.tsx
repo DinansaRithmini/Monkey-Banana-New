@@ -191,14 +191,14 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
         })
       )}
       
-      {/* Spinning indicator */}
+      {/* Spinning indicator
       {isSpinning && (
         <div className="absolute bottom-[-40px] left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
           <div className="text-yellow-400 font-bungee text-xs tracking-widest opacity-80 animate-pulse drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]">
             ● SPINNING ●
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
