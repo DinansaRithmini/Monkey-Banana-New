@@ -125,7 +125,7 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
       {displayPlayers.length === 0 ? (
         // Show placeholder when no players
         <div className="text-center">
-          <span className="font-bungee text-[#4E2A0B] text-lg opacity-50">
+          <span className="font-bungee text-[#4E2A0B] text-sm opacity-50">
             WAITING FOR PLAYERS...
           </span>
         </div>
