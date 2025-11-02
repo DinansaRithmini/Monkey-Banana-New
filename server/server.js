@@ -709,7 +709,7 @@ app.post("/api/coinRelease", async (req, res) => {
     uuid,
     actionType,
     amount,
-    sessionUuid: sessionUuid.toString(),
+    sessionUuid: `M${sessionUuid.toString()}`,
   };
 
   // 🔐 Step 1: Generate signed payload
@@ -754,7 +754,7 @@ app.post("/api/createUserGame", async (req, res) => {
   }
 
   const payload = {
-    sessionUuid: sessionUuid.toString(),
+    sessionUuid: `M${sessionUuid.toString()}`,
     userUuid,
     gameSessionUuid,
     amount,
