@@ -2,6 +2,29 @@
 import { useState, useEffect } from "react";
 import SlotMachineReel from "./subcomponents/SlotMachineReel";
 import type { GameState, Winner } from "../../../lib/types";
+// --- Count-up animation hook ---
+function useCountUp(targetValue: number, duration = 800) {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    let startValue = current;
+    let startTime: number | null = null;
+    const difference = targetValue - startValue;
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      setCurrent(Math.floor(startValue + difference * progress));
+
+      if (progress < 1) requestAnimationFrame(step);
+    };
+
+    requestAnimationFrame(step);
+  }, [targetValue]);
+
+  return current;
+}
+
 interface Player {
   id: string;
   name: string;
@@ -37,6 +60,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   // Track when spinning should start
   const [shouldSpin, setShouldSpin] = useState(false);
   const [previousTimeLeft, setPreviousTimeLeft] = useState(timeLeft);
+  const [showAllWinners, setShowAllWinners] = useState(false);
 
   // Trigger spinning when timer hits 0
   useEffect(() => {
@@ -56,7 +80,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   useEffect(() => {
     if (gameState?.phase === "spinning") {
       setShouldSpin(true);
-    } else if (gameState?.phase === "betting" || gameState?.phase === "finished") {
+    } else if (
+      gameState?.phase === "betting" ||
+      gameState?.phase === "finished"
+    ) {
       setShouldSpin(false);
     }
   }, [gameState?.phase]);
@@ -74,6 +101,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [winnerPage, setWinnerPage] = useState(0);
+  const winnersPerPage = 3;
+  const startIndex = winnerPage * winnersPerPage;
+  const visibleWinners = winners.slice(startIndex, startIndex + winnersPerPage);
+  useEffect(() => {
+    setWinnerPage(0);
+  }, [winners.length]);
 
   useEffect(() => {
     fetchWinners();
@@ -107,16 +141,21 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         {/* === Total Coin Balance (Above Slot Machine) === */}
         <div className="flex items-center justify-center gap-2 mb-6 mt-2">
           {/* 🪙 Coin Circle */}
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-[#F7A531] flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.3)] mt-[20px]">
+          <div className="mt-[0px]">
             <img
               src="/images/gameon_chip.png"
               alt="coin"
-              className="w-5 h-5 md:w-6 md:h-6 object-contain"
+              className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
             />
           </div>
 
           {/* 💰 Balance Amount */}
-          <span className="text-[30px] md:text-[0px] leading-none font-bungee text-white drop-shadow-[4px_4px_0_#4E2A0B] mt-[20px]">
+          <span
+            className="text-[30px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B] mt-[0px]"
+            style={{
+              WebkitTextStroke: "2px #432311",
+            }}
+          >
             {walletBalance?.toFixed(2) ?? "0.00"}
           </span>
         </div>
@@ -147,18 +186,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </div>
 
         {/* === Action Buttons (Below Slot Machine) === */}
-        <div className="flex justify-center items-center gap-6 mt-6">
+        <div className="flex justify-center items-center mt-6">
           {/* Dark Brown Button - Quick Bet 1 */}
           <button
             onClick={() => onQuickBet(1)}
-            className="relative w-[185px] h-[50px] active:scale-95 transition-transform"
+            className="relative w-[200px] h-[60px] squishy z-10"
           >
             <img
               src="/images/dark_brown_button.png"
               alt="Dark Brown Button"
               className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
             />
-            <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFD85A] font-bungee text-lg">
+            <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
               <img
                 src="/images/gameon_chip.png"
                 alt="coin"
@@ -171,14 +210,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           {/* Light Brown Button - Add Bet */}
           <button
             onClick={onAddBet}
-            className="relative w-[185px] h-[50px] active:scale-95 transition-transform"
+            className="relative w-[200px] h-[60px] squishy -ml-[50px] z-0"
           >
             <img
               src="/images/light_brown_button.png"
               alt="Light Brown Button"
               className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
             />
-            <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-lg">
+            <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-2xl">
               ADD
             </span>
           </button>
@@ -193,7 +232,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               alt="Time Holder"
               className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
             />
-
             {/* 🕒 Text Overlay (Inside white area) */}
             <div
               className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300`}
@@ -210,122 +248,59 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                   alt="coin"
                   className="w-8 h-8 md:w-7 md:h-7 object-contain"
                 />
-                <span
-                  className={`font-bungee text-3xl leading-none transition-colors duration-300 text-[#4E2A0B]`}
-                >
-                  {formatNumber(gameState?.totalPot ?? 0)}
-                </span>
+                {/* use the count-up animation */}
+                {(() => {
+                  const animatedPot = useCountUp(
+                    gameState?.totalPot ?? 0,
+                    1000
+                  );
+                  return (
+                    <span className="font-bungee text-3xl leading-none text-[#4E2A0B] transition-all duration-300">
+                      {animatedPot.toLocaleString("en-IN")}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
-
             {/* === Active Players Section === */}
-            {gameState && gameState.players.length > 0 && (
-              <div className="relative w-full flex justify-center mt-60 mb-48">
-                {/* 🟤 Background */}
-
-                <div className="relative w-screen -mx-15 h-auto">
-                  <img
-                    src="/images/past_player_background.png"
-                    alt="Active Players Background"
-                    className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
-                    style={{
-                      minHeight: "520px",
-                    }}
-                  />
-
-                  {/* === Content Overlay === */}
-                  <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                    {/* 🏷️ Header */}
-                    <div className="px-5 py-8 mb-10">
-                      <span className="font-bungee text-white text-lg md:text-xl drop-shadow-[2px_2px_0_#4E2A0B]">
-                        ACTIVE PLAYERS
-                      </span>
-                    </div>
-
-                    {/* 👑 Active Player Cards */}
-                    <div className="w-full flex flex-col items-center gap-3">
-                      {gameState.players.map((player, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center w-[280px] h-[60px] bg-[#4E2A0B] rounded-xl shadow-md px-3 gap-3"
+            {gameState && gameState.players.length > 0 ? (
+              <>
+                {/* 🟤 Active Players */}
+                <div className="relative w-full flex justify-center mt-80 mb-48">
+                  <div className="relative w-screen -mx-15 h-auto">
+                    <img
+                      src="/images/active_players_background.png"
+                      alt="Active Players Background"
+                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
+                      style={{
+                        minHeight: "520px",
+                      }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
+                      <div className="px-5 py-7 mb-6 -mt-[10px] transition-all duration-500">
+                        <span
+                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+                          style={{
+                            WebkitTextStroke: "3px #432311",
+                          }}
                         >
-                          <img
-                            src={player.profileImage}
-                            alt={player.name}
-                            className="w-[45px] h-[45px] rounded-full object-cover border-2 border-[#FFD85A]"
-                          />
-                          <div className="flex flex-col flex-grow">
-                            <span className="font-bungee text-white text-sm leading-tight">
-                              {player.name.toUpperCase()}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <img
-                                src="/images/gameon_chip.png"
-                                alt="coin"
-                                className="w-4 h-4 object-contain"
-                              />
-                              <span className="text-[#FFD85A] font-bungee text-base">
-                                {player.amount.toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* === Past Winners Section === */}
-            <div className="relative w-full flex justify-center mt-130">
-              {/* 🟤 Background */}
-              <div className="relative w-screen -mx-15 h-auto">
-                <img
-                  src="/images/past_player_background.png"
-                  alt="Past Winners Background"
-                  className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
-                  style={{
-                    minHeight: "50px",
-                  }}
-                />
-
-                {/* === Content Overlay === */}
-                <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                  {/* 🏷️ Header */}
-                  <div className="px-5 py-8 mb-10">
-                    <span className="font-bungee text-white text-lg md:text-xl drop-shadow-[2px_2px_0_#4E2A0B]">
-                      PAST WINNERS
-                    </span>
-                  </div>
-
-                  {/* 👑 Winner Cards */}
-                  {winners.length === 0 ? (
-                    <div className="text-center text-white/60 py-4">
-                      No winners yet. Be the first!
-                    </div>
-                  ) : (
-                    <div className="w-full flex justify-center">
-                      <div
-                        className="flex flex-col items-center gap-3 overflow-y-auto scrollbar-hide"
-                        style={{
-                          maxHeight: "340px", // roughly 5.5 cards (60px each + gap)
-                          paddingRight: "4px", // avoids scroll bar overlap
-                        }}
-                      >
-                        {winners.map((winner, index) => (
+                          ACTIVE PLAYERS
+                        </span>
+                      </div>
+                      <div className="w-full flex flex-col items-center gap-3">
+                        {gameState.players.map((player, index) => (
                           <div
                             key={index}
-                            className="flex items-center w-[280px] h-[60px] bg-[#4E2A0B] rounded-xl shadow-md px-3 gap-3 flex-shrink-0"
+                            className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
                           >
                             <img
-                              src={winner.profileImage}
-                              alt={winner.playerName}
-                              className="w-[45px] h-[45px] rounded-full object-cover border-2 border-[#FFD85A]"
+                              src={player.profileImage}
+                              alt={player.name}
+                              className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
                             />
                             <div className="flex flex-col flex-grow">
-                              <span className="font-bungee text-white text-sm leading-tight truncate">
-                                {winner.playerName.toUpperCase()}
+                              <span className="font-bungee text-white text-sm leading-tight">
+                                {player.name.toUpperCase()}
                               </span>
                               <div className="flex items-center gap-1">
                                 <img
@@ -334,7 +309,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   className="w-4 h-4 object-contain"
                                 />
                                 <span className="text-[#FFD85A] font-bungee text-base">
-                                  {winner.wonAmount.toFixed(2)}
+                                  {player.amount.toFixed(2)}
                                 </span>
                               </div>
                             </div>
@@ -342,10 +317,218 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         ))}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </div>
+
+                {/* === Past Winners Section BELOW Active Players === */}
+                <div className="relative w-full flex justify-center mt-[520px] transition-all duration-500">
+                  <div className="relative w-screen -mx-15 h-auto">
+                    <img
+                      src="/images/past_player_background.png"
+                      alt="Past Winners Background"
+                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain"
+                      style={{ minHeight: "50px" }}
+                    />
+                    <div className="relative flex flex-col items-center mt-[30px] px-4 z-10">
+                      <div className="px-5 py-4 mb-10 -mt[10px]">
+                        <span
+                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+                          style={{ WebkitTextStroke: "3px #432311" }}
+                        >
+                          PAST PLAYERS
+                        </span>
+                      </div>
+
+                      {winners.length === 0 ? (
+                        <div className="text-center text-white/60 py-4">
+                          No winners yet. Be the first!
+                        </div>
+                      ) : (
+                        <>
+                          <div
+                            className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
+                            style={{
+                              maxHeight: "310px",
+                            }}
+                          >
+                            <div
+                              className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
+                              style={{
+                                transform: `translateY(-${winnerPage * 270}px)`,
+                              }}
+                            >
+                              {winners.map((winner, index) => (
+                                <div
+                                  key={index}
+                                  className="relative flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
+                                >
+                                  <img
+                                    src={winner.profileImage}
+                                    alt={winner.playerName}
+                                    className="absolute left-[5px] top-[2px] w-[55px] h-[55px] rounded-[6px] object-cover border-0"
+                                  />
+                                  <div className="flex flex-col flex-grow ml-[70px]">
+                                    <span className="font-bungee text-white text-sm leading-tight truncate">
+                                      {winner.playerName.toUpperCase()}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      <img
+                                        src="/images/gameon_chip.png"
+                                        alt="coin"
+                                        className="w-4 h-4 object-contain"
+                                      />
+                                      <span className="text-[#FFD85A] font-bungee text-base">
+                                        {winner.wonAmount.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* ▼ Scroll Down Button */}
+                          {winners.length > 3 && (
+                            <button
+                              onClick={() =>
+                                setWinnerPage((prev) =>
+                                  prev + 1 >= Math.ceil(winners.length / 3)
+                                    ? 0
+                                    : prev + 1
+                                )
+                              }
+                              className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={3}
+                                stroke="#341D1A"
+                                className="w-6 h-6 transition-transform duration-500 hover:translate-y-1"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* 👇 If no active players, show Past Winners immediately after timer */}
+                <div className="relative w-full flex justify-center mt-80 transition-all duration-500">
+                  <div className="relative w-screen -mx-15 h-auto">
+                    <img
+                      src="/images/past_player_background.png"
+                      alt="Past Winners Background"
+                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
+                      style={{ minHeight: "50px" }}
+                    />
+                    <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
+                      <div className="px-5 py-4 mb-6 -mt-[10px] transition-all duration-500">
+                        <span
+                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+                          style={{ WebkitTextStroke: "3px #432311" }}
+                        >
+                          PAST PLAYERS
+                        </span>
+                      </div>
+                      {winners.length === 0 ? (
+                        <div className="text-center text-white/60 py-4">
+                          No winners yet. Be the first!
+                        </div>
+                      ) : (
+                        <>
+                          {/* Container with limited height (3.5 cards visible) */}
+                          <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
+                            <div
+                              className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
+                              style={{
+                                maxHeight: "310px", // roughly fits 3.5 cards
+                              }}
+                            >
+                              <div
+                                className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
+                                style={{
+                                  transform: `translateY(-${
+                                    winnerPage * 270
+                                  }px)`, // slide up each "page"
+                                }}
+                              >
+                                {winners.map((winner, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
+                                  >
+                                    <img
+                                      src={winner.profileImage}
+                                      alt={winner.playerName}
+                                      className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
+                                    />
+                                    <div className="flex flex-col flex-grow">
+                                      <span className="font-bungee text-white text-sm leading-tight truncate">
+                                        {winner.playerName.toUpperCase()}
+                                      </span>
+                                      <div className="flex items-center gap-1">
+                                        <img
+                                          src="/images/gameon_chip.png"
+                                          alt="coin"
+                                          className="w-4 h-4 object-contain"
+                                        />
+                                        <span className="text-[#FFD85A] font-bungee text-base">
+                                          {winner.wonAmount.toFixed(2)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* ▼ Scroll Down Button */}
+                          {winners.length > 3 && (
+                            <button
+                              onClick={() =>
+                                setWinnerPage((prev) =>
+                                  prev + 1 >= Math.ceil(winners.length / 3)
+                                    ? 0
+                                    : prev + 1
+                                )
+                              }
+                              className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth={3}
+                                stroke="#341D1A"
+                                className="w-6 h-6 transition-transform duration-500 hover:translate-y-1"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M19 9l-7 7-7-7"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
