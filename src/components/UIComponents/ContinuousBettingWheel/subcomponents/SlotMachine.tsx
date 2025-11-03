@@ -585,11 +585,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       ) : (
                         <>
                           {/* Container with limited height (3.5 cards visible) */}
-                          <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
+                          <div className="w-full flex justify-center mt-[5px] transition-all duration-500">
                             <div
                               className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                               style={{
-                                maxHeight: "310px", // roughly fits 3.5 cards
+                                maxHeight: "285px", // roughly fits 3.5 cards
                               }}
                             >
                               <div
