@@ -360,7 +360,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       }}
                     />
                     <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                      <div className="px-5 py-7 mb-6 -mt-[10px] transition-all duration-500">
+                      <div className="px-5 py-7 transition-all duration-500">
                         <span
                           className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
                           style={{
@@ -371,7 +371,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         </span>
                       </div>
                       {/* Container with paging for active players (matches Past Players) */}
-                      <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
+                    <div className="w-full relative justify-center mt-[20px] transition-all duration-500">
                         <div
                           className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                           style={{
@@ -428,7 +428,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   : prev + 1
                               )
                             }
-                            className="mt-3 ml-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                            className="mt-3 mx-auto flex items-center justify-center transition-transform duration-300 hover:scale-110"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -455,7 +455,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 </div>
 
                 {/* === Past Winners Section BELOW Active Players === */}
-                <div className="relative w-full flex justify-center mt-[520px] transition-all duration-500">
+                <div className="relative w-full flex justify-center mt-[520px]">
                   <div className="relative w-screen -mx-15 h-auto">
                     <img
                       src="/images/past_player_background.png"
@@ -464,7 +464,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       style={{ minHeight: "50px" }}
                     />
                     <div className="relative flex flex-col items-center mt-[30px] px-4 z-10">
-                      <div className="px-5 py-4 mb-10 -mt[10px]">
+                      <div className="px-5 py-4 mb-6 ">
                         <span
                           className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
                           style={{ WebkitTextStroke: "3px #432311" }}
@@ -482,11 +482,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                           <div
                             className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                             style={{
-                              maxHeight: "310px",
+                              maxHeight: "285px",
                             }}
                           >
                             <div
-                              className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
+                               className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
                               style={{
                                 transform: `translateY(-${winnerPage * 270}px)`,
                               }}
@@ -539,7 +539,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                 viewBox="0 0 24 24"
                                 strokeWidth={3}
                                 stroke="#341D1A"
-                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
                                     ? 'rotate-180'
                                     : ''
                                   }`}
@@ -551,7 +551,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                 />
                               </svg>
                             </button>
-                          )}
+                          ) }
                         </>
                       )}
                     </div>
