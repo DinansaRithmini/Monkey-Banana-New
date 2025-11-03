@@ -603,6 +603,28 @@ class ServerGameManager {
       if (!this.game.winner.isBot) {
         const winnings = this.game.totalPot - this.game.winner.amount;
 
+        // Check if winner only placed one bet (didn't increase their bet)
+        // Count how many times this player appears in the game history
+        const winnerBetCount = this.game.players.filter(p => p.id === this.game?.winner?.id).length;
+        const isFirstTimeBet = winnerBetCount === 1;
+
+        // If winner only placed one bet (is only in the game), call RELEASE
+        if (isFirstTimeBet && this.game.winner) {
+          await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uuid: this.game.winner.id,
+              actionType: "WIN",
+              amount: 0,
+              sessionUuid: this.game.roundNumber,
+            }),
+          });
+          console.log(`Winner ${this.game.winner.name} bet only once - WIN action called for ${this.game.winner.amount}`);
+        }
+
         // Award winnings
         await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
           method: "POST",

@@ -325,7 +325,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         </span>
                       </div>
                       {/* Container with paging for active players (matches Past Players) */}
-                      <div className="w-full flex flex-col items-center mt-[20px] transition-all duration-500">
+                      <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
                         <div
                           className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                           style={{
@@ -378,7 +378,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   : prev + 1
                               )
                             }
-                            className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                            className="mt-3 ml-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
