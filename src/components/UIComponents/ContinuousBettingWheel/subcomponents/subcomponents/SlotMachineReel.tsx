@@ -169,7 +169,9 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
                     : "text-[#4E2A0B] opacity-40"
                 }`}
               >
-                {player.name.toUpperCase()}
+                {player.name.length > 10 
+                  ? `${player.name.substring(0, 10).toUpperCase()}...` 
+                  : player.name.toUpperCase()}
               </span>
 
               {/* Winner celebration effect - only show when stopped */}

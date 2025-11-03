@@ -43,6 +43,7 @@ interface SlotMachineProps {
   gameState: GameState | null;
   playerName: string | null;
   hasJoined: boolean;
+  userId: string | null;
 }
 
 const SlotMachine: React.FC<SlotMachineProps> = ({
@@ -56,6 +57,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   gameState,
   playerName,
   hasJoined,
+  userId,
 }) => {
   // Select current player (winner or fallback)
   const currentPlayer =
@@ -242,9 +244,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
             // --- Finished Phase ---
             if (phase === "finished") {
-              const isWinner = gameState?.winner?.id === currentWinnerId;
+              const isWinner = gameState?.winner?.id === userId;
               const playerInRound = gameState?.players.some(
-                (p) => p.id === currentWinnerId
+                (p) => p.id === userId
               );
 
               if (isWinner) {
@@ -345,58 +347,167 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 })()}
               </div>
             </div>
-            {/* === Active Players Section === */}
-            {gameState && gameState.players.length > 0 ? (
-              <>
-                {/* 🟤 Active Players */}
-                <div className="relative w-full flex justify-center mt-80 mb-48">
-                  <div className="relative w-screen -mx-15 h-auto">
-                    <img
-                      src="/images/active_players_background.png"
-                      alt="Active Players Background"
-                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
-                      style={{
-                        minHeight: "520px",
-                      }}
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                      <div className="px-5 py-7 transition-all duration-500">
-                        <span
-                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+
+            {/* === Active Players Section (Conditionally Rendered) === */}
+            {gameState && gameState.players.length > 0 && (
+              <div className="relative w-full flex justify-center mt-60 mb-48 bg-[#ffffff]">
+                <div className="relative w-screen -mx-15 h-auto">
+                  <img
+                    src="/images/active_players_background.png"
+                    alt="Active Players Background"
+                    className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
+                    style={{
+                      minHeight: "520px",
+                    }}
+                  />
+                  <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
+                    <div className="px-5 py-7 transition-all duration-500">
+                      <span
+                        className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+                        style={{
+                          WebkitTextStroke: "3px #432311",
+                        }}
+                      >
+                        ACTIVE PLAYERS
+                      </span>
+                    </div>
+                    {/* Container with paging for active players */}
+                    <div className="w-full relative justify-center mt-[20px] transition-all duration-500">
+                      <div
+                        className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
+                        style={{
+                          maxHeight: "270px",
+                        }}
+                      >
+                        <div
+                          className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
                           style={{
-                            WebkitTextStroke: "3px #432311",
+                            transform: `translateY(-${activePage * 270}px)`,
                           }}
                         >
-                          ACTIVE PLAYERS
-                        </span>
+                          {gameState.players.map((player, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
+                            >
+                              <img
+                                src={player.profileImage}
+                                alt={player.name}
+                                className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
+                              />
+                              <div className="flex flex-col flex-grow">
+                                <span className="font-bungee text-white text-sm leading-tight">
+                                  {player.name.toUpperCase()}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <img
+                                    src="/images/gameon_chip.png"
+                                    alt="coin"
+                                    className="w-4 h-4 object-contain"
+                                  />
+                                  <span className="text-[#FFD85A] font-bungee text-base">
+                                    {player.amount.toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      {/* Container with paging for active players (matches Past Players) */}
-                    <div className="w-full relative justify-center mt-[20px] transition-all duration-500">
+
+                      {/* ▼ Scroll Down Button for Active Players */}
+                      {gameState.players.length > activePlayersPerPage && (
+                        <button
+                          onClick={() =>
+                            setActivePage((prev) =>
+                              prev + 1 >=
+                                Math.ceil(
+                                  gameState.players.length /
+                                  activePlayersPerPage
+                                )
+                                ? 0
+                                : prev + 1
+                            )
+                          }
+                          className="mt-3 mx-auto flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={3}
+                            stroke="#341D1A"
+                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                              ? 'rotate-180'
+                              : ''
+                              }`}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* === Past Players Section (Always Visible) === */}
+            <div className={`relative w-full flex justify-center transition-all duration-500 ${gameState && gameState.players.length > 0 ? 'mt-[520px]' : 'mt-70'
+              }`}>
+              <div className="relative w-screen -mx-15 h-auto">
+                <img
+                  src="/images/past_player_background.png"
+                  alt="Past Winners Background"
+                  className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
+                  style={{ minHeight: "50px" }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
+                  <div className="px-5 py-4 mb-6 -mt-[10px] transition-all duration-500">
+                    <span
+                      className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
+                      style={{ WebkitTextStroke: "3px #432311" }}
+                    >
+                      PAST PLAYERS
+                    </span>
+                  </div>
+                  {winners.length === 0 ? (
+                    <div className="text-center text-white/60 py-4">
+                      No winners yet. Be the first!
+                    </div>
+                  ) : (
+                    <>
+                      {/* Container with limited height */}
+                      <div className="w-full flex justify-center mt-[5px] transition-all duration-500">
                         <div
                           className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                           style={{
-                            maxHeight: "270px",
+                            maxHeight: "285px",
                           }}
                         >
                           <div
                             className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
                             style={{
-                              transform: `translateY(-${activePage * 270}px)`,
+                              transform: `translateY(-${winnerPage * 270}px)`,
                             }}
                           >
-                            {gameState.players.map((player, index) => (
+                            {winners.map((winner, index) => (
                               <div
                                 key={index}
                                 className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
                               >
                                 <img
-                                  src={player.profileImage}
-                                  alt={player.name}
+                                  src={winner.profileImage}
+                                  alt={winner.playerName}
                                   className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
                                 />
                                 <div className="flex flex-col flex-grow">
-                                  <span className="font-bungee text-white text-sm leading-tight">
-                                    {player.name.toUpperCase()}
+                                  <span className="font-bungee text-white text-sm leading-tight truncate">
+                                    {winner.playerName.toUpperCase()}
                                   </span>
                                   <div className="flex items-center gap-1">
                                     <img
@@ -405,7 +516,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                       className="w-4 h-4 object-contain"
                                     />
                                     <span className="text-[#FFD85A] font-bungee text-base">
-                                      {player.amount.toFixed(2)}
+                                      {winner.wonAmount.toFixed(2)}
                                     </span>
                                   </div>
                                 </div>
@@ -413,262 +524,44 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             ))}
                           </div>
                         </div>
-
-                        {/* ▼ Scroll Down Button for Active Players */}
-                        {gameState.players.length > activePlayersPerPage && (
-                          <button
-                            onClick={() =>
-                              setActivePage((prev) =>
-                                prev + 1 >=
-                                Math.ceil(
-                                  gameState.players.length /
-                                    activePlayersPerPage
-                                )
-                                  ? 0
-                                  : prev + 1
-                              )
-                            }
-                            className="mt-3 mx-auto flex items-center justify-center transition-transform duration-300 hover:scale-110"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth={3}
-                              stroke="#341D1A"
-                              className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
-                                  ? 'rotate-180'
-                                  : ''
-                                }`}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 9l-7 7-7-7"
-                              />
-                            </svg>
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  </div>
-                </div>
 
-                {/* === Past Winners Section BELOW Active Players === */}
-                <div className="relative w-full flex justify-center mt-[520px]">
-                  <div className="relative w-screen -mx-15 h-auto">
-                    <img
-                      src="/images/past_player_background.png"
-                      alt="Past Winners Background"
-                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain"
-                      style={{ minHeight: "50px" }}
-                    />
-                    <div className="relative flex flex-col items-center mt-[30px] px-4 z-10">
-                      <div className="px-5 py-4 mb-6 ">
-                        <span
-                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
-                          style={{ WebkitTextStroke: "3px #432311" }}
+                      {/* ▼ Scroll Down Button */}
+                      {winners.length > 3 && (
+                        <button
+                          onClick={() =>
+                            setWinnerPage((prev) =>
+                              prev + 1 >= Math.ceil(winners.length / 3)
+                                ? 0
+                                : prev + 1
+                            )
+                          }
+                          className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
                         >
-                          PAST PLAYERS
-                        </span>
-                      </div>
-
-                      {winners.length === 0 ? (
-                        <div className="text-center text-white/60 py-4">
-                          No winners yet. Be the first!
-                        </div>
-                      ) : (
-                        <>
-                          <div
-                            className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
-                            style={{
-                              maxHeight: "285px",
-                            }}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={3}
+                            stroke="#341D1A"
+                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
+                              ? 'rotate-180'
+                              : ''
+                              }`}
                           >
-                            <div
-                               className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
-                              style={{
-                                transform: `translateY(-${winnerPage * 270}px)`,
-                              }}
-                            >
-                              {winners.map((winner, index) => (
-                                <div
-                                  key={index}
-                                  className="relative flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
-                                >
-                                  <img
-                                    src={winner.profileImage}
-                                    alt={winner.playerName}
-                                    className="absolute left-[5px] top-[2px] w-[55px] h-[55px] rounded-[6px] object-cover border-0"
-                                  />
-                                  <div className="flex flex-col flex-grow ml-[70px]">
-                                    <span className="font-bungee text-white text-sm leading-tight truncate">
-                                      {winner.playerName.toUpperCase()}
-                                    </span>
-                                    <div className="flex items-center gap-1">
-                                      <img
-                                        src="/images/gameon_chip.png"
-                                        alt="coin"
-                                        className="w-4 h-4 object-contain"
-                                      />
-                                      <span className="text-[#FFD85A] font-bungee text-base">
-                                        {winner.wonAmount.toFixed(2)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* ▼ Scroll Down Button */}
-                          {winners.length > 3 && (
-                            <button
-                              onClick={() =>
-                                setWinnerPage((prev) =>
-                                  prev + 1 >= Math.ceil(winners.length / 3)
-                                    ? 0
-                                    : prev + 1
-                                )
-                              }
-                              className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={3}
-                                stroke="#341D1A"
-                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
-                                    ? 'rotate-180'
-                                    : ''
-                                  }`}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </button>
-                          ) }
-                        </>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
                       )}
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </div>
-              </>
-            ) : (
-              <>
-                {/* 👇 If no active players, show Past Winners immediately after timer */}
-                <div className="relative w-full flex justify-center mt-80 transition-all duration-500">
-                  <div className="relative w-screen -mx-15 h-auto">
-                    <img
-                      src="/images/past_player_background.png"
-                      alt="Past Winners Background"
-                      className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
-                      style={{ minHeight: "50px" }}
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
-                      <div className="px-5 py-4 mb-6 -mt-[10px] transition-all duration-500">
-                        <span
-                          className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
-                          style={{ WebkitTextStroke: "3px #432311" }}
-                        >
-                          PAST PLAYERS
-                        </span>
-                      </div>
-                      {winners.length === 0 ? (
-                        <div className="text-center text-white/60 py-4">
-                          No winners yet. Be the first!
-                        </div>
-                      ) : (
-                        <>
-                          {/* Container with limited height (3.5 cards visible) */}
-                          <div className="w-full flex justify-center mt-[5px] transition-all duration-500">
-                            <div
-                              className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
-                              style={{
-                                maxHeight: "285px", // roughly fits 3.5 cards
-                              }}
-                            >
-                              <div
-                                className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
-                                style={{
-                                  transform: `translateY(-${
-                                    winnerPage * 270
-                                  }px)`, // slide up each "page"
-                                }}
-                              >
-                                {winners.map((winner, index) => (
-                                  <div
-                                    key={index}
-                                    className="flex items-center w-[360px] h-[80px] bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]"
-                                  >
-                                    <img
-                                      src={winner.profileImage}
-                                      alt={winner.playerName}
-                                      className="w-[45px] h-[45px] rounded-[6px] object-cover border-2 border-[#FFD85A]"
-                                    />
-                                    <div className="flex flex-col flex-grow">
-                                      <span className="font-bungee text-white text-sm leading-tight truncate">
-                                        {winner.playerName.toUpperCase()}
-                                      </span>
-                                      <div className="flex items-center gap-1">
-                                        <img
-                                          src="/images/gameon_chip.png"
-                                          alt="coin"
-                                          className="w-4 h-4 object-contain"
-                                        />
-                                        <span className="text-[#FFD85A] font-bungee text-base">
-                                          {winner.wonAmount.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* ▼ Scroll Down Button */}
-                          {winners.length > 3 && (
-                            <button
-                              onClick={() =>
-                                setWinnerPage((prev) =>
-                                  prev + 1 >= Math.ceil(winners.length / 3)
-                                    ? 0
-                                    : prev + 1
-                                )
-                              }
-                              className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={3}
-                                stroke="#341D1A"
-                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
-                                    ? 'rotate-180'
-                                    : ''
-                                  }`}
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M19 9l-7 7-7-7"
-                                />
-                              </svg>
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

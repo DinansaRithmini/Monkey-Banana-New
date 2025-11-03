@@ -38,12 +38,12 @@ const ContinuousBettingWheel: React.FC = () => {
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
 
- 
+
   useEffect(() => {
     const audio = new Audio("/images/background_sound.mp3");
- 
+
     audio.loop = true;
-    audio.volume = 0.4; 
+    audio.volume = 0.4;
 
     // Try to autoplay — browsers may block until user interacts
     const playAudio = () => {
@@ -262,26 +262,24 @@ const ContinuousBettingWheel: React.FC = () => {
 
   return (
     <div
-      className="relative w-full min-h-[1949px] overflow-y-auto bg-no-repeat bg-top bg-cover"
+      className="relative w-full min-h-[1500px]"
       style={{
+        backgroundColor: "#F4E3C2", // 👈 fallback color
         backgroundImage: "url('/images/background_image.png')",
-        backgroundSize: "cover", // fills entire width & height
+        backgroundSize: "100% auto",
         backgroundPosition: "top center",
-        backgroundRepeat: "no-repeat",
+        backgroundRepeat: "repeat-y",
       }}
     >
       {/* ===== Scrollable Content ===== */}
-      <div className="flex flex-col items-center justify-start min-h-[1949px]">
+      <div className="flex flex-col items-center justify-start pb-20">
         {/* Header */}
         <div className="relative w-full flex flex-col items-center justify-center pt-12 pb-4">
-          {/* Monkey Head Image */}
           <img
             src="/images/monkey_eyes.gif"
             alt="Monkey Eyes"
             className="swing w-[120px] h-auto md:w-[140px] absolute top-[20px] left-1/4 -translate-x-[50px] z-10"
           />
-
-          {/* Text */}
           <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff] mt-[10px]">
             MONKEY
             <br />
@@ -302,6 +300,7 @@ const ContinuousBettingWheel: React.FC = () => {
             gameState={gameState}
             playerName={playerName}
             hasJoined={hasJoined}
+            userId={userId}
           />
         </div>
 
@@ -311,9 +310,6 @@ const ContinuousBettingWheel: React.FC = () => {
             {formatTime(gameState?.timeLeft ?? 0)}
           </span>
         </div>
-
-        {/* Bottom Spacer (reaches end of image height) */}
-        <div className="h-[400px]" />
       </div>
 
       {/* ===== Fixed Popups ===== */}
@@ -345,6 +341,7 @@ const ContinuousBettingWheel: React.FC = () => {
       />
     </div>
   );
+
 };
 
 export default ContinuousBettingWheel;
