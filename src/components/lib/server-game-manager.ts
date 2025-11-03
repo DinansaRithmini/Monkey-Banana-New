@@ -597,33 +597,18 @@ class ServerGameManager {
             sessionUuid: this.game.roundNumber,
           }),
         });
+        console.log(`CAPTURE action processed for player ${player.name} amount ${player.amount}`);
       }
 
       // Process WIN and airdrop for winner if not a bot
       if (!this.game.winner.isBot) {
-        const winnings = this.game.totalPot - this.game.winner.amount;
+        // Check if winner is the only player in the pool (excluding bots)
+        const realPlayers = this.game.players.filter(p => !p.isBot);
+        const isOnlyPlayer = realPlayers.length === 1;
 
-        // Check if winner only placed one bet (didn't increase their bet)
-        // Count how many times this player appears in the game history
-        const winnerBetCount = this.game.players.filter(p => p.id === this.game?.winner?.id).length;
-        const isFirstTimeBet = winnerBetCount === 1;
-
-        // If winner only placed one bet (is only in the game), call RELEASE
-        if (isFirstTimeBet && this.game.winner) {
-          await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              uuid: this.game.winner.id,
-              actionType: "WIN",
-              amount: 0,
-              sessionUuid: this.game.roundNumber,
-            }),
-          });
-          console.log(`Winner ${this.game.winner.name} bet only once - WIN action called for ${this.game.winner.amount}`);
-        }
+        // If winner is the only player, send WIN with amount 0
+        // Otherwise, send WIN with actual winnings
+        const winnings = isOnlyPlayer ? 0 : this.game.totalPot - this.game.winner.amount;
 
         // Award winnings
         await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
@@ -638,6 +623,12 @@ class ServerGameManager {
             sessionUuid: this.game.roundNumber,
           }),
         });
+
+        if (isOnlyPlayer) {
+          console.log(`Winner ${this.game.winner.name} is the only player - WIN action called with amount 0`);
+        } else {
+          console.log(`Winner ${this.game.winner.name} won ${winnings} coins`);
+        }
 
         //Award airdrop points
         // await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
