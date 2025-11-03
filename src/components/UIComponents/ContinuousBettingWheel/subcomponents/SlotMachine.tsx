@@ -325,7 +325,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         </span>
                       </div>
                       {/* Container with paging for active players (matches Past Players) */}
-                      <div className="w-full flex justify-center mt-[20px] transition-all duration-500">
+                      <div className="w-full flex flex-col items-center mt-[20px] transition-all duration-500">
                         <div
                           className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
                           style={{
@@ -378,7 +378,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   : prev + 1
                               )
                             }
-                            className="mt-3 ml-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                            className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -386,11 +386,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                               viewBox="0 0 24 24"
                               strokeWidth={3}
                               stroke="#341D1A"
-                              className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
-                                activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                              className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
                                   ? 'rotate-180'
                                   : ''
-                              }`}
+                                }`}
                             >
                               <path
                                 strokeLinecap="round"
@@ -490,7 +489,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                 viewBox="0 0 24 24"
                                 strokeWidth={3}
                                 stroke="#341D1A"
-                                className="w-6 h-6 transition-transform duration-500 hover:translate-y-1"
+                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                                    ? 'rotate-180'
+                                    : ''
+                                  }`}
                               >
                                 <path
                                   strokeLinecap="round"
@@ -596,11 +598,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                 viewBox="0 0 24 24"
                                 strokeWidth={3}
                                 stroke="#341D1A"
-                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
-                                  winnerPage + 1 >= Math.ceil(winners.length / 3)
+                                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
                                     ? 'rotate-180'
                                     : ''
-                                }`}
+                                  }`}
                               >
                                 <path
                                   strokeLinecap="round"
