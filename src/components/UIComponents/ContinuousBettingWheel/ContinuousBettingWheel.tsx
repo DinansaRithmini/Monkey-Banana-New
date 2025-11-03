@@ -13,7 +13,6 @@ import LosePopup from "./subcomponents/losepopup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-
 const ContinuousBettingWheel: React.FC = () => {
   const {
     gameState,
@@ -39,6 +38,31 @@ const ContinuousBettingWheel: React.FC = () => {
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
 
+ 
+  useEffect(() => {
+    const audio = new Audio("/images/background_sound.mp3");
+ 
+    audio.loop = true;
+    audio.volume = 0.4; 
+
+    // Try to autoplay — browsers may block until user interacts
+    const playAudio = () => {
+      audio.play().catch(() => {
+        console.log("Autoplay blocked until user interacts.");
+      });
+    };
+
+    // Start on first user interaction
+    document.addEventListener("click", playAudio, { once: true });
+    document.addEventListener("keydown", playAudio, { once: true });
+
+    // Clean up on unmount
+    return () => {
+      audio.pause();
+      document.removeEventListener("click", playAudio);
+      document.removeEventListener("keydown", playAudio);
+    };
+  }, []);
 
   // Fetch wallet balance
   const fetchWalletBalance = async () => {
@@ -133,13 +157,13 @@ const ContinuousBettingWheel: React.FC = () => {
   useEffect(() => {
     // Detect phase transition from spinning to finished
     if (
-      previousPhase === "spinning" && 
-      gameState?.phase === "finished" && 
+      previousPhase === "spinning" &&
+      gameState?.phase === "finished" &&
       userId
     ) {
       const isUserWinner = gameState.winner?.id === userId;
       const userParticipated = gameState.players.some((p) => p.id === userId);
-      
+
       setIsWinner(isUserWinner);
       setShowResult(true);
 
@@ -159,7 +183,7 @@ const ContinuousBettingWheel: React.FC = () => {
           // User participated but didn't win - show lose popup only
           setShowJackpotPopup(false);
           setShowLosePopup(true);
-          
+
           // Auto-close lose popup after 3 seconds
           setTimeout(() => {
             setShowLosePopup(false);
@@ -207,7 +231,7 @@ const ContinuousBettingWheel: React.FC = () => {
       </div>
     );
 
-    if (error)
+  if (error)
     return (
       <div className="min-h-screen flex items-center justify-center bg-yellow-100">
         <Card className="bg-[#FFF5C3] border-[#F7A531]">
@@ -235,7 +259,6 @@ const ContinuousBettingWheel: React.FC = () => {
   const handleClosePopup = () => {
     setShowPopup(false);
   };
-
 
   return (
     <div

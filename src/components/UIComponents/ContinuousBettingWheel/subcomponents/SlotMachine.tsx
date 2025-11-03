@@ -216,8 +216,54 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           />
         </div>
 
-        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-white mt-6">
-          Hey, {capitalizeFirstLetter(playerName ?? "")}. {getPhaseMessage()}
+        {/* 🎯 Dynamic Phase Message */}
+        <h2
+          key={gameState?.phase + (hasJoined ? "-joined" : "")}
+          className="text-lg sm:text-xl md:text-2xl font-semibold text-white mt-6 text-center transition-opacity duration-700 ease-in-out opacity-100"
+        >
+          {(() => {
+            if (!playerName)
+              return "Welcome player! Enter your name to start playing.";
+
+            const name = capitalizeFirstLetter(playerName);
+            const phase = gameState?.phase;
+
+            // --- Betting Phase ---
+            if (phase === "betting") {
+              return hasJoined
+                ? `Your wager has been placed, good luck! `
+                : `Hey ${name}, Place your wager! `;
+            }
+
+            // --- Spinning Phase ---
+            if (phase === "spinning") {
+              return `The wheel is spinning... `;
+            }
+
+            // --- Finished Phase ---
+            if (phase === "finished") {
+              const isWinner = gameState?.winner?.id === currentWinnerId;
+              const playerInRound = gameState?.players.some(
+                (p) => p.id === currentWinnerId
+              );
+
+              if (isWinner) {
+                return `🎉 Congratulations ${name}, You won this round! `;
+              } else if (hasJoined || playerInRound) {
+                return `Better luck next time, ${name}! `;
+              } else {
+                return `Hey ${name}, join the next round! `;
+              }
+            }
+
+            // --- Round Ending ---
+            if (phase === "round_ending") {
+              return `Round ending — get ready for the next one! `;
+            }
+
+            // --- Default ---
+            return `Hey ${name}, Welcome to Monkey Banana `;
+          })()}
         </h2>
 
         {/* === Action Buttons (Below Slot Machine) === */}
@@ -373,7 +419,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                           <button
                             onClick={() =>
                               setActivePage((prev) =>
-                                prev + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                                prev + 1 >=
+                                Math.ceil(
+                                  gameState.players.length /
+                                    activePlayersPerPage
+                                )
                                   ? 0
                                   : prev + 1
                               )
@@ -545,8 +595,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                               <div
                                 className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
                                 style={{
-                                  transform: `translateY(-${winnerPage * 270
-                                    }px)`, // slide up each "page"
+                                  transform: `translateY(-${
+                                    winnerPage * 270
+                                  }px)`, // slide up each "page"
                                 }}
                               >
                                 {winners.map((winner, index) => (
