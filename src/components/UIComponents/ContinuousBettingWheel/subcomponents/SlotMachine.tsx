@@ -250,7 +250,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               );
 
               if (isWinner) {
-                return `🎉 Congratulations ${name}, You won this round! `;
+                return `Congratulations ${name}, You won this round! `;
               } else if (hasJoined || playerInRound) {
                 return `Better luck next time, ${name}! `;
               } else {
