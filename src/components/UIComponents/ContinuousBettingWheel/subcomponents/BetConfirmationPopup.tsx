@@ -29,7 +29,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
       <div
         className="relative w-[420px] h-[380px] bg-cover bg-center bg-no-repeat flex flex-col items-center justify-center rounded-xl shadow-lg drop-shadow-[0_0_25px_#FFD85A] transition-transform duration-300 scale-100"
         style={{
-          backgroundImage: "url('/images/insufficient_balance_background.png')",
+          backgroundImage: "url('/images/Insufficient_balance_background.png')",
         }}
         onClick={(e) => e.stopPropagation()}
       >

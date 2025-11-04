@@ -125,7 +125,7 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
       {displayPlayers.length === 0 ? (
         // Show placeholder when no players
         <div className="text-center">
-          <span className="font-bungee text-[#4E2A0B] text-lg opacity-50">
+          <span className="font-bungee text-[#4E2A0B] text-sm opacity-50">
             WAITING FOR PLAYERS...
           </span>
         </div>
@@ -169,7 +169,9 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
                     : "text-[#4E2A0B] opacity-40"
                 }`}
               >
-                {player.name.toUpperCase()}
+                {player.name.length > 10 
+                  ? `${player.name.substring(0, 10).toUpperCase()}...` 
+                  : player.name.toUpperCase()}
               </span>
 
               {/* Winner celebration effect - only show when stopped */}
@@ -191,14 +193,14 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
         })
       )}
       
-      {/* Spinning indicator */}
+      {/* Spinning indicator
       {isSpinning && (
         <div className="absolute bottom-[-40px] left-1/2 transform -translate-x-1/2 pointer-events-none z-30">
           <div className="text-yellow-400 font-bungee text-xs tracking-widest opacity-80 animate-pulse drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]">
             ● SPINNING ●
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

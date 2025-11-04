@@ -9,6 +9,7 @@ export interface Player {
 }
 
 export interface GameState {
+  activePlayers: any
   id: string
   players: Player[]
   phase: "betting" | "spinning" | "finished" | "round_ending" | "waiting"
@@ -23,6 +24,7 @@ export interface GameState {
 }
 
 export interface Winner {
+  id: number
   winnerId: string
   roundNumber: number
   playerUuid: string

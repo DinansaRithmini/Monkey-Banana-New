@@ -105,6 +105,7 @@ class ServerGameManager {
       bettingStartTime: Date.now(),
       roundNumber: latestRound + 1,
       isActive: true,
+      activePlayers: 0,
     }
 
     this.winnerSaved = false
@@ -187,7 +188,8 @@ class ServerGameManager {
       createdAt: new Date(dbGame.createdAt).getTime(),
       bettingStartTime: new Date(dbGame.bettingStartTime).getTime(),
       roundNumber: dbGame.roundNumber,
-      isActive: dbGame.isActive
+      isActive: dbGame.isActive,
+      activePlayers: dbGame.activePlayers
     }
   }
 
@@ -272,11 +274,11 @@ class ServerGameManager {
       );
 
       // Send notification if there are outbidded players
-      if (outbiddedPlayers.length > 0) {
-        const outbiddedUuids = outbiddedPlayers.map(p => p.id);
-        console.log(`Player ${existingPlayer.name} increased bet to ${newTotalAmount}, notifying ${outbiddedPlayers.length} outbid players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
-        await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
-      }
+      // if (outbiddedPlayers.length > 0) {
+      //   const outbiddedUuids = outbiddedPlayers.map(p => p.id);
+      //   console.log(`Player ${existingPlayer.name} increased bet to ${newTotalAmount}, notifying ${outbiddedPlayers.length} outbid players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
+      //   await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
+      // }
 
       existingPlayer.amount += newBetAmount;
       this.game.totalPot += newBetAmount;
@@ -313,11 +315,11 @@ class ServerGameManager {
       );
 
       // Send notification if there are outbidded players
-      if (outbiddedPlayers.length > 0) {
-        const outbiddedUuids = outbiddedPlayers.map(p => p.id);
-        console.log(`New player ${newPlayer.name} with bet ${newBetAmount} outbid ${outbiddedPlayers.length} players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
-        await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
-      }
+      // if (outbiddedPlayers.length > 0) {
+      //   const outbiddedUuids = outbiddedPlayers.map(p => p.id);
+      //   console.log(`New player ${newPlayer.name} with bet ${newBetAmount} outbid ${outbiddedPlayers.length} players:`, outbiddedPlayers.map(p => `${p.name}(${p.amount})`));
+      //   await this.sendOutbidNotification(outbiddedUuids, this.game.roundNumber);
+      // }
     }
 
     this.game.players.push(newPlayer)
@@ -595,11 +597,18 @@ class ServerGameManager {
             sessionUuid: this.game.roundNumber,
           }),
         });
+        console.log(`CAPTURE action processed for player ${player.name} amount ${player.amount}`);
       }
 
       // Process WIN and airdrop for winner if not a bot
       if (!this.game.winner.isBot) {
-        const winnings = this.game.totalPot - this.game.winner.amount;
+        // Check if winner is the only player in the pool (excluding bots)
+        const realPlayers = this.game.players.filter(p => !p.isBot);
+        const isOnlyPlayer = realPlayers.length === 1;
+
+        // If winner is the only player, send WIN with amount 0
+        // Otherwise, send WIN with actual winnings
+        const winnings = isOnlyPlayer ? 0 : this.game.totalPot - this.game.winner.amount;
 
         // Award winnings
         await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
@@ -610,21 +619,27 @@ class ServerGameManager {
           body: JSON.stringify({
             uuid: this.game.winner.id,
             actionType: "WIN",
-            amount: winnings + 100,
+            amount: winnings,
             sessionUuid: this.game.roundNumber,
           }),
         });
 
+        if (isOnlyPlayer) {
+          console.log(`Winner ${this.game.winner.name} is the only player - WIN action called with amount 0`);
+        } else {
+          console.log(`Winner ${this.game.winner.name} won ${winnings} coins`);
+        }
+
         //Award airdrop points
-        await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uuid: this.game.winner.id,
-          }),
-        });
+        // await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
+        //   method: "POST",
+        //   headers: {
+        //     "Content-Type": "application/json",
+        //   },
+        //   body: JSON.stringify({
+        //     uuid: this.game.winner.id,
+        //   }),
+        // });
       }
       
       // Mark coin actions as processed

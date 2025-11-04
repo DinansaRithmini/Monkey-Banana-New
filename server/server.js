@@ -90,6 +90,64 @@ mongoose.connection.on("disconnected", () => {
 // Initialize game manager
 const gameManager = new GameManager(io)
 
+// Shared function to update player profile and propagate changes
+async function upsertPlayerProfile({ uuid, name, profileImage, email }) {
+  if (!uuid) {
+    throw new Error("UUID is required")
+  }
+
+  let player = await PlayerProfile.findOne({ uuid })
+
+  if (player) {
+    // Update existing player
+    const oldName = player.name
+    const oldProfileImage = player.profileImage
+    
+    player.name = name || player.name
+    player.profileImage = profileImage || player.profileImage
+    player.email = email || player.email
+    await player.save()
+
+    // Update player in active continuous games if name or profileImage changed
+    if ((name && name !== oldName) || (profileImage && profileImage !== oldProfileImage)) {
+      await ContinuousGame.updateMany(
+        { 
+          "players.id": uuid,
+          roundStatus: "active"
+        },
+        {
+          $set: {
+            "players.$.name": player.name,
+            "players.$.profileImage": player.profileImage
+          }
+        }
+      )
+
+      // Also update in GameRoom if exists
+      await GameRoom.updateMany(
+        { "players.uuid": uuid },
+        {
+          $set: {
+            "players.$.name": player.name,
+            "players.$.profileImage": player.profileImage
+          }
+        }
+      )
+    }
+  } else {
+    // Create new player
+    player = new PlayerProfile({
+      uuid,
+      name: name || `Player_${uuid.substring(0, 8)}`,
+      profileImage: profileImage || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png",
+      email,
+    })
+    await player.save()
+  }
+
+  return player
+}
+
 // Socket.io connection handling
 // server.js (socket.io part)
 io.on("connection", (socket) => {
@@ -474,16 +532,12 @@ app.post("/api/createRoomV2", async (req, res) => {
       for (const incomingPlayer of players) {
         const existingPlayer = existingRoom.players.find(p => p.uuid === incomingPlayer.uuid)
         if (existingPlayer) {
-          // Update player profile via the update endpoint to ensure propagation
+          // Update player profile directly to ensure propagation
           try {
-            await fetch(`http://localhost:${process.env.PORT}/api/player/update`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                uuid: incomingPlayer.uuid,
-                name: incomingPlayer.name,
-                profileImage: incomingPlayer.profileImage
-              }),
+            await upsertPlayerProfile({
+              uuid: incomingPlayer.uuid,
+              name: incomingPlayer.name,
+              profileImage: incomingPlayer.profileImage
             })
           } catch (err) {
             console.error("Error updating player profile:", err)
@@ -529,14 +583,10 @@ app.post("/api/createRoomV2", async (req, res) => {
     // Update player profiles for all new players
     for (const player of players) {
       try {
-        await fetch(`http://localhost:${process.env.PORT}/api/player/update`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uuid: player.uuid,
-            name: player.name,
-            profileImage: player.profileImage
-          }),
+        await upsertPlayerProfile({
+          uuid: player.uuid,
+          name: player.name,
+          profileImage: player.profileImage
         })
       } catch (err) {
         console.error("Error updating player profile:", err)
@@ -583,54 +633,7 @@ app.post("/api/player/update", async (req, res) => {
       return res.status(400).json({ success: false, error: "UUID is required" })
     }
 
-    let player = await PlayerProfile.findOne({ uuid })
-
-    if (player) {
-      // Update existing player
-      const oldName = player.name
-      const oldProfileImage = player.profileImage
-      
-      player.name = name || player.name
-      player.profileImage = profileImage || player.profileImage
-      player.email = email || player.email
-      await player.save()
-
-      // Update player in active continuous games if name or profileImage changed
-      if ((name && name !== oldName) || (profileImage && profileImage !== oldProfileImage)) {
-        await ContinuousGame.updateMany(
-          { 
-            "players.id": uuid,
-            roundStatus: "active"
-          },
-          {
-            $set: {
-              "players.$.name": player.name,
-              "players.$.profileImage": player.profileImage
-            }
-          }
-        )
-
-        // Also update in GameRoom if exists
-        await GameRoom.updateMany(
-          { "players.uuid": uuid },
-          {
-            $set: {
-              "players.$.name": player.name,
-              "players.$.profileImage": player.profileImage
-            }
-          }
-        )
-      }
-    } else {
-      // Create new player
-      player = new PlayerProfile({
-        uuid,
-        name: name || `Player_${uuid.substring(0, 8)}`,
-        profileImage: profileImage || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png",
-        email,
-      })
-      await player.save()
-    }
+    const player = await upsertPlayerProfile({ uuid, name, profileImage, email })
 
     res.json({ success: true, player })
   } catch (error) {
@@ -741,99 +744,6 @@ app.post("/api/coinRelease", async (req, res) => {
   }
 });
 
-
-app.post("/api/sendMessage", async (req, res) => {
-  const { uuid, sessionUuid } = req.body;
-
-
-  if (!uuid || !sessionUuid) {
-    return res.status(400).json({ success: false, message: "Missing required fields: uuid, sessionUuid" });
-  }
-
-  const payload = {
-    uuid: uuid,                         // The user UUID (recipient of the notification)
-    notificationTypeCode: 'RAFFLE_DRAW_OUTBID',              // The type of the notification (INFO, ALERT, etc.)
-    notificationText: 'Your bid has been outbid by another player!',  // The content of the notification
-    notificationReference: sessionUuid.toString(),  // The reference (could be a game session, etc.)
-    createdByUuid: uuid,             // UUID of the user who created the notification (optional)
-    relationalReferenceId: sessionUuid,              // ID for the relational reference (e.g., game session ID)
-    relationalReferenceEntity: 'raffle_draw_outbid'   // The entity this notification is related to (e.g., 'GameSession')
-  };
-
-  // 🔐 Step 1: Generate signed payload
-  const { signature, payload: body } = generateSignedRequest(payload, privateKey);
-
-  try {
-    // Step 1: Release coins
-    const releaseResponse = await axios.post(
-      `${GAMEON_BACKEND_URL}/api/sdk/v1/game-session/usercoin/sendMessage`,
-      JSON.parse(body),
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Developer-ID": DEVELOPER_ID,
-          "X-Signature": signature,
-        }
-      }
-    );
-    console.log("Release body:", body);
-    console.log("Release response:", releaseResponse.data);
-
-    if (!releaseResponse.data?.status) {
-      return res.status(500).json({
-        status: false,
-        message: "Failed to release coins: " + (releaseResponse.data?.message || "Unknown error"),
-      });
-    }
-
-    return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
-  } catch (err) {
-    return res.status(500).json({ status: false, message: "Server error while releasing coins or joining game." });
-  }
-});
-
-
-app.post("/api/airdrop-points", async (req, res) => {
-  const { uuid } = req.body;
-
-
-  if (!uuid) {
-    return res.status(400).json({ success: false, message: "Missing required fields: uuid" });
-  }
-
-  const payload = {
-    "userUuid" : uuid,
-    "gameId": "1",
-    "points": 1000,
-  };
-
-  try {
-    const accessToken = await getClientCredentialsToken();
-    // Step 1: Release coins
-    const releaseResponse = await axios.post(
-      AIRDROP_URL,
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        }
-      }
-    );
-
-    if (!releaseResponse.data?.status) {
-      return res.status(500).json({
-        status: false,
-        message: "Failed to release coins: " + (releaseResponse.data?.message || "Unknown error"),
-      });
-    }
-
-    return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
-  } catch (err) {
-    return res.status(500).json({ status: false, message: "Server error while releasing coins or joining game." });
-  }
-});
-
 // POST /api/releaseCoinsAndJoinGame
 app.post("/api/createUserGame", async (req, res) => {
   const { sessionUuid, userUuid, gameSessionUuid, amount } = req.body;
@@ -905,5 +815,6 @@ app.get("/api/getUserWalletBalance", async (req, res) => {
 
 
 const PORT = process.env.PORT
+console.log(`Server is running on port ${PORT}`)
 server.listen(PORT, () => {
 })
