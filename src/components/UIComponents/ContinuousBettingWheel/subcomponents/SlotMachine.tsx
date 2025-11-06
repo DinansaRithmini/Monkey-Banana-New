@@ -472,7 +472,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
                       style={{ WebkitTextStroke: "3px #432311" }}
                     >
-                      PAST PLAYERS
+                      PAST WINNERS
                     </span>
                   </div>
                   {winners.length === 0 ? (

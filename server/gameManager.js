@@ -200,7 +200,7 @@ class GameManager {
       // Determine winner after spin animation
       setTimeout(() => {
         this.determineWinner(gameId, finalRotation)
-      }, 5000)
+      }, 60000)
     } catch (error) {
       console.error("Error starting spin:", error)
     }

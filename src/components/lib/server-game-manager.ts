@@ -510,10 +510,10 @@ class ServerGameManager {
     // Save state to database
     this.saveGameToDatabase()
 
-    // Determine winner after spin animation (15 seconds to match frontend)
+    // Determine winner after spin animation (60 seconds to match frontend)
     setTimeout(() => {
       this.determineWinner(finalRotation)
-    }, 5000)
+    }, 60000)
   }
 
   private async determineWinner(finalRotation: number) {
