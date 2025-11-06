@@ -195,15 +195,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
         {/* === Slot machine wrapper === */}
         <div className="relative flex justify-center items-center mb-1">
-          {/* 🌟 Shine background effect (code-based) */}
-          <div
-            className="absolute inset-0 z-0 opacity-80 animate-rotate-slow"
-            style={{
-              background:
-                "radial-gradient(circle at center, rgba(255, 216, 90, 0.35) 0%, rgba(247, 165, 49, 0.15) 40%, rgba(78, 42, 11, 0) 70%)",
-            }}
-          ></div>
-
           {/* 🎰 Slot machine image */}
           <img
             src="/images/slot_machine.gif"

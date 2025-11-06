@@ -263,7 +263,7 @@ const ContinuousBettingWheel: React.FC = () => {
 
   return (
     <div
-      className="relative w-full min-h-[1500px] overflow-x-hidden"
+      className="relative w-full min-h-[1500px]"
       style={{
         backgroundColor: "#F4E3C2", // 👈 fallback color
         backgroundImage: "url('/images/background_image.png')",
