@@ -68,6 +68,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Hide scrollbar globally */
+html,
+body {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 /* ✨ Extra utility animations (used in other UIs) */
 @keyframes shimmer {
   0% {
