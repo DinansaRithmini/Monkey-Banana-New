@@ -746,7 +746,7 @@ app.post("/api/coinRelease", async (req, res) => {
 
 // POST /api/releaseCoinsAndJoinGame
 app.post("/api/createUserGame", async (req, res) => {
-  const { sessionUuid, userUuid, gameSessionUuid, amount } = req.body;
+  const { sessionUuid, userUuid, name, gameSessionUuid, amount } = req.body;
 
 
   if (!userUuid) {
@@ -759,6 +759,17 @@ app.post("/api/createUserGame", async (req, res) => {
     gameSessionUuid,
     amount,
   };
+
+  const emailPayload = {
+    emails: ["thanuga@gameonworld.ai", "dinansa@gameonworld.ai", "devin@gameonworld.ai", "imasha.data@gmail.com", "kalana@gameonworld.ai", "chathura@gameonworld.ai", "hesara@gameonworld.ai", "krishan@gameonworld.ai", "marketing@gameonworld.ai", "msmrashid@gmail.com"],
+    subject: "New Bet Placed - Monkey Banana",
+    message: `${name} has placed a bet in Monkey Banana.`,
+    player_name: name,
+    game_name: "Monkey Banana",
+    bet_amount: amount,
+    game_banner_url: "https://safa.sgp1.digitaloceanspaces.com/safa./game_main_banner_images/4767b80b-4d6c-4f67-a5a1-615fb0ebddc0.jpeg",
+    url: "https://app.gameonworld.ai/game/23"
+  }
 
   try {
     // Step 1: Release coins
@@ -774,6 +785,8 @@ app.post("/api/createUserGame", async (req, res) => {
         message: "Failed to hold coins: " + (releaseResponse.data?.message || "Unknown error"),
       });
     }
+
+    await axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload);
 
     return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
   } catch (err) {

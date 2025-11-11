@@ -121,6 +121,7 @@ const ContinuousBettingWheel: React.FC = () => {
           gameSessionUuid,
           sessionUuid: gameState?.roundNumber,
           amount: pendingBet,
+          name: playerName,
         }
       );
 
