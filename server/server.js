@@ -786,7 +786,7 @@ app.post("/api/createUserGame", async (req, res) => {
       });
     }
 
-    await axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload);
+    //await axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload);
 
     return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
   } catch (err) {
