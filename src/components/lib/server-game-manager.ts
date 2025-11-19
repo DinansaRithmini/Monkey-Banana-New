@@ -1,4 +1,5 @@
 // lib/server-game-manager.ts
+import crypto from "crypto"
 import type { GameState, Player } from "./types"
 import { colors } from "./types"
 
@@ -297,7 +298,7 @@ class ServerGameManager {
       profileImage || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png"
 
     const newPlayer: Player = {
-      id: userId || Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      id: userId || Date.now().toString() + crypto.randomBytes(6).toString('hex'),
       name: name.trim(),
       amount: newBetAmount,
       color: colors[this.game.players.length % colors.length],
@@ -426,7 +427,7 @@ class ServerGameManager {
       // Only add bots if there are less than 5 real players
       if (realPlayers.length < 5) {
         // Add bots at random intervals (not all at once)
-        const shouldAddBot = Math.random() < 0.3; // 30% chance to add a bot each check
+        const shouldAddBot = crypto.randomInt(0, 100) < 30; // 30% chance to add a bot each check
 
         if (shouldAddBot) {
           this.addSingleBot();
@@ -448,8 +449,8 @@ class ServerGameManager {
     const availableBots = BOTS.filter(bot => !this.addedBots.has(bot.id));
     if (availableBots.length === 0) return;
 
-    const randomBot = availableBots[Math.floor(Math.random() * availableBots.length)];
-    const randomAmount = BOT_BET_AMOUNTS[Math.floor(Math.random() * BOT_BET_AMOUNTS.length)];
+    const randomBot = availableBots[crypto.randomInt(0, availableBots.length)];
+    const randomAmount = BOT_BET_AMOUNTS[crypto.randomInt(0, BOT_BET_AMOUNTS.length)];
 
     const newBot: Player = {
       id: randomBot.id,
@@ -500,8 +501,8 @@ class ServerGameManager {
     this.isSpinning = true
 
 
-    const spins = 8 + Math.random() * 4
-    const finalRotation = this.game.rotation + spins * 360 + Math.random() * 360
+    const spins = 8 + crypto.randomInt(0, 401) / 100 // 8 to 12 spins
+    const finalRotation = this.game.rotation + spins * 360 + crypto.randomInt(0, 360)
 
 
     this.game.phase = "spinning"
