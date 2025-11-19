@@ -15,6 +15,7 @@ const { generateSignedRequest } = require('gameon-sdk-auth');
 const axios = require("axios");
 const fs = require('fs');
 const path = require("path");
+const { verifyFrontendSignature } =  require("./middleware/auth");
 
 const privateKeyPath = path.join(__dirname, "./private_key.pem");
 const privateKey = fs.readFileSync(privateKeyPath, "utf8");
@@ -697,7 +698,7 @@ app.get("/api/getPlayerDetails", async (req, res) => {
 })
 
 // POST /api/releaseCoinsAndJoinGame
-app.post("/api/coinRelease", async (req, res) => {
+app.post("/api/coinRelease", verifyFrontendSignature, async (req, res) => {
   const { uuid, amount, actionType, sessionUuid } = req.body;
 
 
