@@ -787,7 +787,9 @@ app.post("/api/createUserGame", async (req, res) => {
       });
     }
 
-    //await axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload);
+    // Send email asynchronously without waiting for it to complete
+    axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload)
+      .catch(err => console.error("Error sending email notification:", err.message));
 
     return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
   } catch (err) {
