@@ -1,6 +1,7 @@
 // lib/server-game-manager.ts
 import type { GameState, Player } from "./types"
 import { colors } from "./types"
+import { createSignedHeaders } from "../../utils/createSignedHeaders";
 
 // Define bot types
 interface Bot {
@@ -589,6 +590,7 @@ class ServerGameManager {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...createSignedHeaders(),
           },
           body: JSON.stringify({
             uuid: player.id,
@@ -615,6 +617,7 @@ class ServerGameManager {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            ...createSignedHeaders(),
           },
           body: JSON.stringify({
             uuid: this.game.winner.id,
