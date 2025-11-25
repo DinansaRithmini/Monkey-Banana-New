@@ -172,8 +172,60 @@ class ServerGameManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gameData)
       })
+
+      // Broadcast the update to all connected clients via Socket.IO
+      this.broadcastGameState()
     } catch (error) {
       console.error("Error saving game to database:", error)
+    }
+  }
+
+  private async saveGameToDatabaseOnly() {
+    if (!this.game) return
+
+    try {
+      const gameData = {
+        gameId: this.game.id,
+        players: this.game.players,
+        phase: this.game.phase,
+        timeLeft: this.game.timeLeft,
+        winner: this.game.winner,
+        rotation: this.game.rotation,
+        totalPot: this.game.totalPot,
+        roundNumber: this.game.roundNumber,
+        bettingStartTime: this.game.bettingStartTime ? new Date(this.game.bettingStartTime) : new Date(),
+        roundStatus: this.game.phase === "finished" ? "completed" : "active",
+        isActive: this.game.isActive,
+        addedBots: Array.from(this.addedBots),
+        botAdditionTimes: Object.fromEntries(this.botAdditionTimes),
+        winnerSaved: this.winnerSaved,
+        isSpinning: this.isSpinning,
+        coinActionsProcessed: this.coinActionsProcessed
+      }
+
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/continuous-game/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(gameData)
+      })
+
+      // NO broadcast - just save to DB for persistence
+    } catch (error) {
+      console.error("Error saving game to database:", error)
+    }
+  }
+
+  private async broadcastGameState() {
+    if (!this.game) return
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/continuous-game/broadcast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameState: this.game })
+      })
+    } catch (error) {
+      console.error("Error broadcasting game state:", error)
     }
   }
 
@@ -400,9 +452,9 @@ class ServerGameManager {
 
       this.game.timeLeft = timeLeft
 
-      // Save state every 5 seconds to keep timer in sync
-      if (timeElapsed % 5 === 0) {
-        this.saveGameToDatabase()
+      // Only save to database every 10 seconds (no broadcast)
+      if (timeElapsed % 10 === 0 && timeElapsed > 0) {
+        this.saveGameToDatabaseOnly()
       }
 
       if (timeLeft <= 0) {
@@ -633,6 +685,30 @@ class ServerGameManager {
           console.log(`Winner ${this.game.winner.name} won ${winnings} coins`);
         }
 
+        // Send notification to all losing players (excluding winner and bots)
+        const losingPlayers = this.game.players.filter(p => 
+          !p.isBot && // Not a bot
+          p.id !== this.game?.winner?.id // Not the winner
+        );
+
+        if (losingPlayers.length > 0) {
+          const losingPlayerUuids = losingPlayers.map(p => p.id).join(',');
+          
+          await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/sendMessage`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              uuid: losingPlayerUuids,
+              winnerName: this.game.winner.name,
+              sessionUuid: this.game.roundNumber,
+            }),
+          })
+
+          console.log(`Notification sent to ${losingPlayers.length} losing players:`, losingPlayerUuids);
+        }
+
         //Award airdrop points
         // await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/airdrop-points`, {
         //   method: "POST",
@@ -694,6 +770,8 @@ class ServerGameManager {
 
     const nextRoundNumber = this.game.roundNumber + 1
 
+    console.log(`Starting new round ${nextRoundNumber}`)
+
     // Create new round via server endpoint
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/continuous-game/new-round`, {
@@ -735,6 +813,9 @@ class ServerGameManager {
     this.winnerSaved = false; // Reset winner saved flag
     this.isSpinning = false; // Reset spinning flag
     this.coinActionsProcessed = false; // Reset coin actions flag
+
+    // Broadcast the new round state immediately to all clients
+    await this.broadcastGameState()
 
     this.startRoundTimer()
     this.startBotCheckTimer()
