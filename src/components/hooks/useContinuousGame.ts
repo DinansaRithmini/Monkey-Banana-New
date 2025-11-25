@@ -173,38 +173,15 @@ export function useContinuousGame() {
 
   // Set up WebSocket connection and listeners
   useEffect(() => {
-    // Initial fetch on mount
-    const initializeGame = async () => {
-      try {
-        const response = await fetch("/api/continuous-game")
-        const data = await response.json()
-
-        if (data.success) {
-          setRawGameState(data.game)
-          setError(null)
-        } else {
-          setError(data.error)
-        }
-      } catch (err) {
-        setError("Failed to fetch game state")
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    initializeGame()
-
-    // Connect to socket
+    console.log("🚀 Initializing WebSocket connection...")
+    
+    // Connect to socket FIRST
     const socket = socketManager.connect()
     console.log("🔌 WebSocket connected for continuous game")
     
-    // Join the continuous game room
-    socketManager.joinGame(CONTINUOUS_GAME_ID)
-    console.log("🎮 Joined game room:", CONTINUOUS_GAME_ID)
-
-    // Listen for game state updates
+    // Listen for game state updates BEFORE joining room
     socketManager.onGameUpdated((game: GameState) => {
-      console.log("📡 WebSocket update:", { 
+      console.log("📡 WebSocket update received:", { 
         round: game.roundNumber, 
         phase: game.phase, 
         players: game.players.length,
@@ -215,8 +192,39 @@ export function useContinuousGame() {
       setLoading(false)
     })
 
+    // Small delay to ensure listener is registered before joining
+    const joinTimeout = setTimeout(() => {
+      // Join the continuous game room - server will send current state immediately
+      socketManager.joinGame(CONTINUOUS_GAME_ID)
+      console.log("🎮 Joined game room:", CONTINUOUS_GAME_ID)
+    }, 100)
+
+    // Fallback: fetch initial state if socket doesn't deliver within 2 seconds
+    const fallbackTimeout = setTimeout(async () => {
+      if (!rawGameState) {
+        console.log("⚠️ Fallback: fetching initial state via HTTP")
+        try {
+          const response = await fetch("/api/continuous-game")
+          const data = await response.json()
+
+          if (data.success) {
+            setRawGameState(data.game)
+            setError(null)
+          } else {
+            setError(data.error)
+          }
+        } catch (err) {
+          setError("Failed to fetch game state")
+        } finally {
+          setLoading(false)
+        }
+      }
+    }, 2000)
+
     // Cleanup on unmount
     return () => {
+      clearTimeout(joinTimeout)
+      clearTimeout(fallbackTimeout)
       console.log("🔌 WebSocket disconnected")
       socketManager.disconnect()
     }

@@ -167,7 +167,24 @@ io.on("connection", (socket) => {
         }).sort({ roundNumber: -1 })
         
         if (game) {
+          console.log(`Sending game state to ${socket.id}: Round ${game.roundNumber}, ${game.players.length} players`)
           socket.emit("gameUpdated", game)
+        } else {
+          console.log(`No active game found for ${socket.id}, sending empty state`)
+          // Send a default empty state if no game exists
+          socket.emit("gameUpdated", {
+            gameId: "continuous-betting-game",
+            players: [],
+            phase: "betting",
+            timeLeft: 60,
+            winner: null,
+            rotation: 0,
+            totalPot: 0,
+            roundNumber: 0,
+            bettingStartTime: new Date(),
+            roundStatus: "active",
+            isActive: true
+          })
         }
       } catch (error) {
         console.error("Error fetching continuous game on join:", error)
