@@ -84,28 +84,48 @@ export function useContinuousGame() {
     fetchPlayerDetails()
   }, [userId, gameSessionUuid])
 
-  // Set up WebSocket connection and listeners
+  // New effect to handle merging avatar and client timer whenever rawGameState or avatar changes
   useEffect(() => {
-    if (!rawGameState || !avatarImagePath || !userId) {
-      if (rawGameState) setGameState(rawGameState)
+    if (!rawGameState) {
+      setGameState(null)
+      return
+    }
+
+    if (!avatarImagePath || !userId) {
+      // If no avatar yet, just use raw state with client timer
+      setGameState({
+        ...rawGameState,
+        timeLeft: rawGameState.phase === "betting" ? clientTimeLeft : rawGameState.timeLeft
+      })
       return
     }
 
     const merged = {
       ...rawGameState,
       players: rawGameState.players.map((p) => (p.id === userId ? { ...p, profileImage: avatarImagePath } : p)),
+      // Only override timeLeft during betting phase with client-calculated value
+      timeLeft: rawGameState.phase === "betting" ? clientTimeLeft : rawGameState.timeLeft
     }
 
     setGameState(merged)
-  }, [rawGameState, avatarImagePath, userId])
+  }, [rawGameState, avatarImagePath, userId, clientTimeLeft])
 
   // Client-side countdown timer - calculates time locally based on bettingStartTime
   useEffect(() => {
-    if (!rawGameState || rawGameState.phase !== "betting" || !rawGameState.bettingStartTime) {
-      // Reset timer when not in betting phase
-      if (rawGameState?.phase !== "betting") {
-        setClientTimeLeft(60)
-      }
+    if (!rawGameState) {
+      setClientTimeLeft(60)
+      return
+    }
+
+    // If not in betting phase, use server's timeLeft or default
+    if (rawGameState.phase !== "betting") {
+      setClientTimeLeft(rawGameState.timeLeft || 0)
+      return
+    }
+
+    // If no bettingStartTime, fallback to server's timeLeft
+    if (!rawGameState.bettingStartTime) {
+      setClientTimeLeft(rawGameState.timeLeft || 60)
       return
     }
 
@@ -115,7 +135,20 @@ export function useContinuousGame() {
 
     // Calculate initial time left
     const calculateTimeLeft = () => {
-      const elapsed = Math.floor((Date.now() - (rawGameState.bettingStartTime || Date.now())) / 1000)
+      const bettingStart = rawGameState.bettingStartTime
+      if (!bettingStart) {
+        return rawGameState.timeLeft || timerDuration
+      }
+
+      const startTime = typeof bettingStart === 'number' 
+        ? bettingStart 
+        : new Date(bettingStart).getTime()
+      
+      if (isNaN(startTime)) {
+        return rawGameState.timeLeft || timerDuration
+      }
+      
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
       return Math.max(0, timerDuration - elapsed)
     }
 
@@ -137,13 +170,6 @@ export function useContinuousGame() {
 
     return () => clearInterval(interval)
   }, [rawGameState?.phase, rawGameState?.bettingStartTime, rawGameState?.roundNumber])
-
-  // Override the timeLeft in gameState with client-calculated value
-  useEffect(() => {
-    if (gameState && gameState.phase === "betting") {
-      setGameState(prev => prev ? { ...prev, timeLeft: clientTimeLeft } : null)
-    }
-  }, [clientTimeLeft, gameState?.phase])
 
   // Set up WebSocket connection and listeners
   useEffect(() => {
