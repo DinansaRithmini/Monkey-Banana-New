@@ -20,8 +20,15 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
 
-  // Update display players when the players prop changes (but not while spinning)
+  // Update display players when the players prop changes
   useEffect(() => {
+    // If displayPlayers is empty and we have players, initialize it (even during spinning)
+    if (displayPlayers.length === 0 && players.length > 0) {
+      setDisplayPlayers(players);
+      return;
+    }
+    
+    // Don't reorder while spinning (to avoid disrupting the animation)
     if (!isSpinning) {
       // If there's a winner, arrange players so winner is in the middle (index 1)
       if (winnerId && players.length > 0) {
@@ -52,7 +59,7 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
         setDisplayPlayers(players);
       }
     }
-  }, [players, isSpinning, winnerId]);
+  }, [players, isSpinning, winnerId, displayPlayers.length]);
 
   // 🎰 Smooth continuous spinning animation
   useEffect(() => {
