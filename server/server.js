@@ -167,12 +167,29 @@ io.on("connection", (socket) => {
         }).sort({ roundNumber: -1 })
         
         if (game) {
-          console.log(`Sending game state to ${socket.id}: Round ${game.roundNumber}, ${game.players.length} players`)
-          socket.emit("gameUpdated", game)
+          console.log(`Sending game state to ${socket.id}: Round ${game.roundNumber}, Phase: ${game.phase}, ${game.players.length} players`)
+          // Send the game state as-is with all current properties
+          const gameState = {
+            id: game.gameId,
+            gameId: game.gameId,
+            players: game.players,
+            phase: game.phase,
+            timeLeft: game.timeLeft,
+            winner: game.winner,
+            rotation: game.rotation,
+            totalPot: game.totalPot,
+            roundNumber: game.roundNumber,
+            bettingStartTime: game.bettingStartTime,
+            roundStatus: game.roundStatus,
+            isActive: game.isActive,
+            createdAt: game.createdAt
+          }
+          socket.emit("gameUpdated", gameState)
         } else {
           console.log(`No active game found for ${socket.id}, sending empty state`)
           // Send a default empty state if no game exists
           socket.emit("gameUpdated", {
+            id: "continuous-betting-game",
             gameId: "continuous-betting-game",
             players: [],
             phase: "betting",

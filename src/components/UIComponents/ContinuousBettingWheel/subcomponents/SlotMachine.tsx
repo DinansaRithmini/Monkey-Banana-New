@@ -84,7 +84,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
       case "round_ending":
         return `No wager was placed`;
       default:
-        return "";
+        return "Loading...";
     }
   };
 
@@ -260,7 +260,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </h2>
 
         {/* === Action Buttons (Below Slot Machine) === */}
-        {gameState?.phase === "betting" && !hasJoined && (
+        {gameState?.phase === "betting" && !hasJoined && playerName && (
           <div className="flex justify-center items-center mt-6">
             {/* Dark Brown Button - Quick Bet 1 */}
             <button
