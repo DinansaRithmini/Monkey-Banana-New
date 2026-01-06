@@ -274,10 +274,10 @@ const ContinuousBettingWheel: React.FC = () => {
         backgroundRepeat: "repeat-y",
       }}
     >
-      {/* Info Button - Top Left */}
+      {/* Info Button - Top Right */}
       <button
         onClick={() => setShowInfoPopup(true)}
-        className="fixed top-4 left-4 z-50 bg-[#4E2A0B] hover:bg-[#6B3A1A] text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+        className="fixed top-4 right-4 z-50 bg-[#4E2A0B] hover:bg-[#6B3A1A] text-white rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
         aria-label="How to play"
       >
         <svg
