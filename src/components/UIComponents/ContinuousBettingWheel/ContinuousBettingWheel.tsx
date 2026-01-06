@@ -400,20 +400,20 @@ const ContinuousBettingWheel: React.FC = () => {
               <div>
                 <h3 className="font-bold text-lg mb-2">🏆 Winning</h3>
                 <p className="text-sm leading-relaxed">
-                  The slot machine randomly selects one player as the winner. The more you bet, the more you can win! The total pot is displayed and updates as more players join.
+                  The slot machine randomly selects one player as the winner. The total pot is displayed and updates as more players join.
                 </p>
               </div>
 
               <div>
                 <h3 className="font-bold text-lg mb-2">⏱️ Timer</h3>
                 <p className="text-sm leading-relaxed">
-                  Each round has a countdown timer. Place your bets before time runs out! A new round starts automatically after each spin.
+                  Each round has a countdown timer. Place your wagers before time runs out! A new round starts automatically after each spin.
                 </p>
               </div>
 
               <div className="bg-[#F7A531]/20 p-3 rounded-lg">
                 <p className="text-xs font-semibold">
-                  💡 Tip: Keep an eye on the total pot and number of players to make strategic betting decisions!
+                  💡 Tip: Keep an eye on the total pot and number of players to make strategic wagering decisions!
                 </p>
               </div>
             </div>
