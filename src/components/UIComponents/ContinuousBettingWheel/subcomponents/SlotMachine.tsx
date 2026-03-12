@@ -205,7 +205,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   // ───────────────────────────────────────────────────
 
   /** Price Pool + Timer card */
-  const PricePoolBlock = () => (
+  const PricePoolBlock = ({ showTimer = true }: { showTimer?: boolean }) => (
     <div className="flex flex-col items-center gap-3">
       {/* Time Holder */}
       <div className="relative w-[260px] h-[155px] lg:w-[300px] lg:h-[178px]">
@@ -231,10 +231,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </div>
       </div>
 
-      {/* Timer */}
-      <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
-        {formatTime(timeLeft)}
-      </span>
+      {/* Timer — hidden in desktop (rendered separately below bet buttons) */}
+      {showTimer && (
+        <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
+          {formatTime(timeLeft)}
+        </span>
+      )}
     </div>
   );
 
@@ -444,91 +446,102 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
       </div>
 
       {/* ── Center: Header + Slot Machine ── */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 overflow-visible px-2" style={{ paddingBottom: "6%" }}>
+      <div className="flex-1 flex flex-col items-center overflow-visible px-2" style={{ paddingBottom: "6%", paddingTop: "4%" }}>
 
+        {/* TOP + MIDDLE + Buttons grouped together */}
+        <div className="flex flex-col items-center gap-3">
 
-        {/* TOP GROUP: Title + Balance */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex items-center justify-center">
-            <h1 className="font-bungee text-[#B26A42] text-2xl tracking-tight leading-[0.85] text-center drop-shadow-[2px_2px_2px_#fff]">
-              MONKEY<br />BANANA
-            </h1>
-          </div>
-          <div className="flex items-center justify-center gap-2">
-            <img
-              src="/images/gameon_chip.png"
-              alt="coin"
-              className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-            />
-            <span
-              className="text-[20px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B]"
-              style={{ WebkitTextStroke: "2px #432311" }}
-            >
-              {walletBalance?.toFixed(2) ?? "0.00"}
-            </span>
-          </div>
-        </div>
-
-        {/* MIDDLE GROUP: Slot Machine + Price Pool + Timer */}
-        <div className="flex flex-col items-center">
-          <div className="relative flex justify-center items-center">
-            <img
-              src="/images/slot_machine.gif"
-              alt="Slot Machine"
-              className="drop-shadow-lg select-none pointer-events-none h-auto z-10"
-              style={{ maxHeight: "240px", width: "auto" }}
-            />
-            <SlotMachineReel
-              players={players}
-              isSpinning={shouldSpin || isSpinning}
-              winnerId={currentWinnerId}
-            />
-          </div>
-          {/* Scaled PricePoolBlock keeps banana/text proportions correct */}
-          <div style={{ transform: "scale(0.65)", transformOrigin: "center top", marginTop: "-14px", marginBottom: "-40px" }}>
-            <PricePoolBlock />
-          </div>
-        </div>
-
-        {/* BOTTOM GROUP: Phase message + Bet Buttons */}
-        <div className="flex flex-col items-center gap-2">
-          <h2
-            key={gameState?.phase + (hasJoined ? "-joined" : "")}
-            className="text-base font-bungee text-[#4E2A0B] text-center transition-opacity duration-700 ease-in-out opacity-100"
-          >
-            {phaseMessage}
-          </h2>
-          {gameState?.phase === "betting" && !hasJoined && playerName && (
-            <div className="flex justify-center items-center">
-              <button
-                onClick={() => onQuickBet(1)}
-                className="relative w-[160px] h-[48px] squishy z-10"
-              >
-                <img
-                  src="/images/dark_brown_button.png"
-                  alt="Dark Brown Button"
-                  className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-                />
-                <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-xl">
-                  <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
-                  + 1
-                </span>
-              </button>
-              <button
-                onClick={onAddBet}
-                className="relative w-[160px] h-[48px] squishy -ml-[36px] z-0"
-              >
-                <img
-                  src="/images/light_brown_button.png"
-                  alt="Light Brown Button"
-                  className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-                />
-                <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-xl">
-                  ADD
-                </span>
-              </button>
+          {/* TOP GROUP: Title + Balance */}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center justify-center">
+              <h1 className="font-bungee text-[#B26A42] text-2xl tracking-tight leading-[0.85] text-center drop-shadow-[2px_2px_2px_#fff]">
+                MONKEY<br />BANANA
+              </h1>
             </div>
-          )}
+            <div className="flex items-center justify-center gap-2">
+              <img
+                src="/images/gameon_chip.png"
+                alt="coin"
+                className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+              />
+              <span
+                className="text-[20px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B]"
+                style={{ WebkitTextStroke: "2px #432311" }}
+              >
+                {walletBalance?.toFixed(2) ?? "0.00"}
+              </span>
+            </div>
+          </div>
+
+          {/* MIDDLE GROUP: Slot Machine */}
+          <div className="flex flex-col items-center">
+            <div className="relative flex justify-center items-center">
+              <img
+                src="/images/slot_machine.gif"
+                alt="Slot Machine"
+                className="drop-shadow-lg select-none pointer-events-none h-auto z-10"
+                style={{ maxHeight: "240px", width: "auto" }}
+              />
+              <SlotMachineReel
+                players={players}
+                isSpinning={shouldSpin || isSpinning}
+                winnerId={currentWinnerId}
+              />
+            </div>
+            {/* Scaled PricePoolBlock — timer hidden here, shown at bottom */}
+            <div style={{ transform: "scale(0.65)", transformOrigin: "center top", marginTop: "-14px", marginBottom: "-40px" }}>
+              <PricePoolBlock showTimer={false} />
+            </div>
+          </div>
+
+          {/* Phase message + Bet Buttons — right below price pool */}
+          <div className="flex flex-col items-center gap-2 mt-6">
+            <h2
+              key={gameState?.phase + (hasJoined ? "-joined" : "")}
+              className="text-base font-bungee text-[#4E2A0B] text-center transition-opacity duration-700 ease-in-out opacity-100"
+            >
+              {phaseMessage}
+            </h2>
+            {gameState?.phase === "betting" && !hasJoined && playerName && (
+              <div className="flex justify-center items-center">
+                <button
+                  onClick={() => onQuickBet(1)}
+                  className="relative w-[160px] h-[48px] squishy z-10"
+                >
+                  <img
+                    src="/images/dark_brown_button.png"
+                    alt="Dark Brown Button"
+                    className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+                  />
+                  <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-xl">
+                    <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
+                    + 1
+                  </span>
+                </button>
+                <button
+                  onClick={onAddBet}
+                  className="relative w-[160px] h-[48px] squishy -ml-[36px] z-0"
+                >
+                  <img
+                    src="/images/light_brown_button.png"
+                    alt="Light Brown Button"
+                    className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+                  />
+                  <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-xl">
+                    ADD
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* TIMER — mt-auto pins it to the very bottom of the center column */}
+        <div className="mt-auto flex justify-center" style={{ paddingTop: "60px" }}>
+          <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
+            {formatTime(timeLeft)}
+          </span>
         </div>
 
       </div>
@@ -541,6 +554,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
       </div>
     </div>
   );
+
 
   // ───────────────────────────────────────────────────
   // MOBILE LAYOUT (< lg) — original stacked layout
