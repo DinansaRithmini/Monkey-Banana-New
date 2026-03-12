@@ -30,6 +30,7 @@ interface Player {
   name: string;
   amount: number;
   isWinner?: boolean;
+  profileImage: string;
 }
 
 interface SlotMachineProps {
@@ -167,13 +168,388 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     }
   };
 
-  return (
-    <div className="relative w-full max-w-3xl mx-auto p-4">
-      {/* Slot machine container */}
+  // Count-up for price pool (defined at component level to avoid Rules of Hooks issues)
+  const animatedPot = useCountUp(gameState?.totalPot ?? 0, 1000);
+
+  // Phase message
+  const phaseMessage = (() => {
+    if (!playerName)
+      return "Welcome player! Enter your name to start playing.";
+
+    const name = capitalizeFirstLetter(playerName);
+    const phase = gameState?.phase;
+
+    if (phase === "betting") {
+      return hasJoined
+        ? `Your wager has been placed, good luck! `
+        : `Hey ${name}, Place your wager! `;
+    }
+    if (phase === "spinning") {
+      return `The wheel is spinning... `;
+    }
+    if (phase === "finished") {
+      const isWinner = gameState?.winner?.id === userId;
+      const playerInRound = gameState?.players.some((p) => p.id === userId);
+      if (isWinner) return `Congratulations ${name}, You won this round! `;
+      else if (hasJoined || playerInRound) return `Better luck next time, ${name}! `;
+      else return `Hey ${name}, join the next round! `;
+    }
+    if (phase === "round_ending") {
+      return `Round ending — get ready for the next one! `;
+    }
+    return `Hey ${name}, Welcome to Monkey Banana `;
+  })();
+
+  // ───────────────────────────────────────────────────
+  // Shared sub-blocks (reused in both mobile & desktop)
+  // ───────────────────────────────────────────────────
+
+  /** Price Pool + Timer card */
+  const PricePoolBlock = () => (
+    <div className="flex flex-col items-center gap-3">
+      {/* Time Holder */}
+      <div className="relative w-[260px] h-[155px] lg:w-[300px] lg:h-[178px]">
+        <img
+          src="/images/time_holder.png"
+          alt="Time Holder"
+          className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+        />
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[35px] lg:translate-x-[40px]">
+          <span className="font-bungee text-sm tracking-wide leading-none mb-1 mt-3 text-[#A35B1B]">
+            PRICE POOL
+          </span>
+          <div className="flex items-center justify-center gap-2">
+            <img
+              src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+              alt="coin"
+              className="w-6 h-6 object-contain"
+            />
+            <span className="font-bungee text-2xl leading-none text-[#4E2A0B]">
+              {animatedPot.toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Timer */}
+      <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
+        {formatTime(timeLeft)}
+      </span>
+    </div>
+  );
+
+  /** Active Players panel */
+  const ActivePlayersPanel = ({ compact = false }: { compact?: boolean }) => {
+    if (!gameState || gameState.players.length === 0) return null;
+    return (
+      <div className="relative w-full">
+        {/* Background stretches to fit content */}
+        <img
+          src="/images/active_players_background.png"
+          alt="Active Players Background"
+          className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
+        />
+        {/* Content in normal flow — sets the height */}
+        <div className="relative z-10 flex flex-col items-center pt-5 pb-5 px-4">
+          <span
+            className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
+            style={{ WebkitTextStroke: "2px #432311" }}
+          >
+            ACTIVE PLAYERS
+          </span>
+
+          {/* Scrollable cards window */}
+          <div
+            className="flex flex-col items-center gap-2 overflow-hidden w-full"
+            style={{ maxHeight: compact ? "225px" : "280px" }}
+          >
+            <div
+              className="flex flex-col items-center gap-2 w-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateY(-${activePage * (compact ? 225 : 280)}px)` }}
+            >
+              {gameState.players.map((player, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center w-full ${ compact ? "h-[65px]" : "h-[80px]"} bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]`}
+                >
+                  <img
+                    src={player.profileImage}
+                    alt={player.name}
+                    className={`${compact ? "w-[38px] h-[38px]" : "w-[45px] h-[45px]"} rounded-[6px] object-cover border-2 border-[#FFD85A] flex-shrink-0`}
+                  />
+                  <div className="flex flex-col flex-grow min-w-0">
+                    <span className={`font-bungee text-white ${compact ? "text-xs" : "text-sm"} leading-tight truncate`}>
+                      {player.name.toUpperCase()}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
+                        {player.amount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {gameState.players.length > activePlayersPerPage && (
+            <button
+              onClick={() =>
+                setActivePage((prev) =>
+                  prev + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage) ? 0 : prev + 1
+                )
+              }
+              className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="#341D1A"
+                className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
+                  activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage) ? "rotate-180" : ""
+                }`}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /** Past Winners panel */
+  const PastWinnersPanel = ({ compact = false }: { compact?: boolean }) => (
+    <div className="relative w-full">
+      {/* Background stretches to fit content */}
+      <img
+        src="/images/past_player_background.png"
+        alt="Past Winners Background"
+        className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
+      />
+      {/* Content in normal flow — sets the height */}
+      <div className="relative z-10 flex flex-col items-center pt-5 pb-5 px-4">
+        <span
+          className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
+          style={{ WebkitTextStroke: "2px #432311" }}
+        >
+          PAST WINNERS
+        </span>
+
+        {winners.length === 0 ? (
+          <div className="text-center text-white/60 py-4 text-sm">
+            No winners yet. Be the first!
+          </div>
+        ) : (
+          <>
+            {/* Scrollable cards window */}
+            <div
+              className="flex flex-col items-center gap-2 overflow-hidden w-full"
+              style={{ maxHeight: compact ? "225px" : "285px" }}
+            >
+              <div
+                className="flex flex-col items-center gap-2 w-full transition-transform duration-700 ease-in-out"
+                style={{ transform: `translateY(-${winnerPage * (compact ? 225 : 270)}px)` }}
+              >
+                {winners.map((winner, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center w-full ${compact ? "h-[65px]" : "h-[80px]"} bg-[#341D1A] rounded-xl px-3 gap-3 flex-shrink-0 border-2 border-[#B26A42] shadow-[inset_0_-9px_0_#B26A42,0_6px_0_rgba(0,0,0,0.1)]`}
+                  >
+                    <img
+                      src={winner.profileImage}
+                      alt={winner.playerName}
+                      className={`${compact ? "w-[38px] h-[38px]" : "w-[45px] h-[45px]"} rounded-[6px] object-cover border-2 border-[#FFD85A] flex-shrink-0`}
+                    />
+                    <div className="flex flex-col flex-grow min-w-0">
+                      <span className={`font-bungee text-white ${compact ? "text-xs" : "text-sm"} leading-tight truncate`}>
+                        {winner.playerName.toUpperCase()}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                        <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
+                          {winner.wonAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {winners.length > 3 && (
+              <button
+                onClick={() =>
+                  setWinnerPage((prev) =>
+                    prev + 1 >= Math.ceil(winners.length / 3) ? 0 : prev + 1
+                  )
+                }
+                className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="#341D1A"
+                  className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
+                    winnerPage + 1 >= Math.ceil(winners.length / 3) ? "rotate-180" : ""
+                  }`}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  // ───────────────────────────────────────────────────
+  // DESKTOP LAYOUT (lg+) — one-page, no scroll
+  // ───────────────────────────────────────────────────
+  const DesktopLayout = () => (
+    <div className="hidden lg:flex w-full h-screen overflow-hidden relative items-center px-8 gap-4">
+
+      {/* Hanging monkey — absolute within h-screen container, matches mobile top-[16px] pivot */}
+      <img
+        src="/images/monkey_eyes.gif"
+        alt="Monkey Eyes"
+        className="swing w-[70px] h-auto absolute top-[16px] z-40 pointer-events-none"
+        style={{ left: "calc(50% - 140px)" }}
+      />
+      {/* ── Left Panel: Active Players ── */}
+      <div className="w-[260px] shrink-0 flex flex-col justify-center items-center py-6">
+        {gameState && gameState.players.length > 0 ? (
+          <div className="w-full">
+            <ActivePlayersPanel compact={true} />
+          </div>
+        ) : (
+          <div className="relative w-full" style={{ height: "280px" }}>
+            <img
+              src="/images/active_players_background.png"
+              alt="Active Players Background"
+              className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
+            />
+            <div className="absolute inset-0 z-10 flex flex-col items-center pt-5 pb-5 px-4">
+              <span
+                className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
+                style={{ WebkitTextStroke: "2px #432311" }}
+              >
+                ACTIVE PLAYERS
+              </span>
+              <div className="flex flex-col items-center justify-center flex-1 gap-3">
+                <span className="text-4xl">🐒</span>
+                <p className="text-[#4E2A0B] font-bungee text-sm text-center opacity-70">
+                  Waiting for<br />players...
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Center: Header + Slot Machine ── */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-3 overflow-visible px-2" style={{ paddingBottom: "6%" }}>
+
+
+        {/* TOP GROUP: Title + Balance */}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center justify-center">
+            <h1 className="font-bungee text-[#B26A42] text-2xl tracking-tight leading-[0.85] text-center drop-shadow-[2px_2px_2px_#fff]">
+              MONKEY<br />BANANA
+            </h1>
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <img
+              src="/images/gameon_chip.png"
+              alt="coin"
+              className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+            />
+            <span
+              className="text-[20px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B]"
+              style={{ WebkitTextStroke: "2px #432311" }}
+            >
+              {walletBalance?.toFixed(2) ?? "0.00"}
+            </span>
+          </div>
+        </div>
+
+        {/* MIDDLE GROUP: Slot Machine + Price Pool + Timer */}
+        <div className="flex flex-col items-center">
+          <div className="relative flex justify-center items-center">
+            <img
+              src="/images/slot_machine.gif"
+              alt="Slot Machine"
+              className="drop-shadow-lg select-none pointer-events-none h-auto z-10"
+              style={{ maxHeight: "240px", width: "auto" }}
+            />
+            <SlotMachineReel
+              players={players}
+              isSpinning={shouldSpin || isSpinning}
+              winnerId={currentWinnerId}
+            />
+          </div>
+          {/* Scaled PricePoolBlock keeps banana/text proportions correct */}
+          <div style={{ transform: "scale(0.65)", transformOrigin: "center top", marginTop: "-14px", marginBottom: "-40px" }}>
+            <PricePoolBlock />
+          </div>
+        </div>
+
+        {/* BOTTOM GROUP: Phase message + Bet Buttons */}
+        <div className="flex flex-col items-center gap-2">
+          <h2
+            key={gameState?.phase + (hasJoined ? "-joined" : "")}
+            className="text-base font-bungee text-[#4E2A0B] text-center transition-opacity duration-700 ease-in-out opacity-100"
+          >
+            {phaseMessage}
+          </h2>
+          {gameState?.phase === "betting" && !hasJoined && playerName && (
+            <div className="flex justify-center items-center">
+              <button
+                onClick={() => onQuickBet(1)}
+                className="relative w-[160px] h-[48px] squishy z-10"
+              >
+                <img
+                  src="/images/dark_brown_button.png"
+                  alt="Dark Brown Button"
+                  className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+                />
+                <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-xl">
+                  <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
+                  + 1
+                </span>
+              </button>
+              <button
+                onClick={onAddBet}
+                className="relative w-[160px] h-[48px] squishy -ml-[36px] z-0"
+              >
+                <img
+                  src="/images/light_brown_button.png"
+                  alt="Light Brown Button"
+                  className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
+                />
+                <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-xl">
+                  ADD
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* ── Right Panel: Past Winners ── */}
+      <div className="w-[260px] shrink-0 flex flex-col justify-center items-center py-6">
+        <div className="w-full">
+          <PastWinnersPanel compact={true} />
+        </div>
+      </div>
+    </div>
+  );
+
+  // ───────────────────────────────────────────────────
+  // MOBILE LAYOUT (< lg) — original stacked layout
+  // ───────────────────────────────────────────────────
+  const MobileLayout = () => (
+    <div className="lg:hidden relative w-full max-w-3xl mx-auto p-4">
       <div className="relative flex flex-col items-center">
-        {/* === Total Coin Balance (Above Slot Machine) === */}
+        {/* Wallet Balance */}
         <div className="flex items-center justify-center gap-2 mb-6 mt-2">
-          {/* 🪙 Coin Circle */}
           <div className="mt-[0px]">
             <img
               src="/images/gameon_chip.png"
@@ -181,27 +557,21 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
             />
           </div>
-
-          {/* 💰 Balance Amount */}
           <span
             className="text-[30px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B] mt-[0px]"
-            style={{
-              WebkitTextStroke: "2px #432311",
-            }}
+            style={{ WebkitTextStroke: "2px #432311" }}
           >
             {walletBalance?.toFixed(2) ?? "0.00"}
           </span>
         </div>
 
-        {/* === Slot machine wrapper === */}
+        {/* Slot machine wrapper */}
         <div className="relative flex justify-center items-center mb-1">
-          {/* 🎰 Slot machine image */}
           <img
             src="/images/slot_machine.gif"
             alt="Slot Machine"
             className="drop-shadow-lg select-none pointer-events-none max-w-[90%] h-auto z-10 mt-[1px]"
           />
-
           <SlotMachineReel
             players={players}
             isSpinning={shouldSpin || isSpinning}
@@ -209,60 +579,17 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           />
         </div>
 
-        {/* 🎯 Dynamic Phase Message */}
+        {/* Phase message */}
         <h2
           key={gameState?.phase + (hasJoined ? "-joined" : "")}
           className="text-lg sm:text-xl md:text-2xl font-semibold text-white mt-6 text-center transition-opacity duration-700 ease-in-out opacity-100"
         >
-          {(() => {
-            if (!playerName)
-              return "Welcome player! Enter your name to start playing.";
-
-            const name = capitalizeFirstLetter(playerName);
-            const phase = gameState?.phase;
-
-            // --- Betting Phase ---
-            if (phase === "betting") {
-              return hasJoined
-                ? `Your wager has been placed, good luck! `
-                : `Hey ${name}, Place your wager! `;
-            }
-
-            // --- Spinning Phase ---
-            if (phase === "spinning") {
-              return `The wheel is spinning... `;
-            }
-
-            // --- Finished Phase ---
-            if (phase === "finished") {
-              const isWinner = gameState?.winner?.id === userId;
-              const playerInRound = gameState?.players.some(
-                (p) => p.id === userId
-              );
-
-              if (isWinner) {
-                return `Congratulations ${name}, You won this round! `;
-              } else if (hasJoined || playerInRound) {
-                return `Better luck next time, ${name}! `;
-              } else {
-                return `Hey ${name}, join the next round! `;
-              }
-            }
-
-            // --- Round Ending ---
-            if (phase === "round_ending") {
-              return `Round ending — get ready for the next one! `;
-            }
-
-            // --- Default ---
-            return `Hey ${name}, Welcome to Monkey Banana `;
-          })()}
+          {phaseMessage}
         </h2>
 
-        {/* === Action Buttons (Below Slot Machine) === */}
+        {/* Bet Buttons */}
         {gameState?.phase === "betting" && !hasJoined && playerName && (
           <div className="flex justify-center items-center mt-6">
-            {/* Dark Brown Button - Quick Bet 1 */}
             <button
               onClick={() => onQuickBet(1)}
               className="relative w-[200px] h-[60px] squishy z-10"
@@ -273,16 +600,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
               />
               <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
-                <img
-                  src="/images/gameon_chip.png"
-                  alt="coin"
-                  className="w-5 h-5 md:w-6 md:h-6 object-contain"
-                />
+                <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
                 + 1
               </span>
             </button>
-
-            {/* Light Brown Button - Add Bet */}
             <button
               onClick={onAddBet}
               className="relative w-[200px] h-[60px] squishy -ml-[50px] z-0"
@@ -299,47 +620,31 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           </div>
         )}
 
-        {/* === Time Holder (Below Buttons) === */}
+        {/* Time Holder */}
         <div className="flex justify-center items-center">
           <div className="relative w-[320px] h-[190px]">
-            {/* Background image */}
             <img
               src="/images/time_holder.png"
               alt="Time Holder"
               className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
             />
-            {/* 🕒 Text Overlay (Inside white area) */}
-            <div
-              className={`absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px] transition-all duration-300`}
-            >
-              <span
-                className={`font-bungee text-sm tracking-wide leading-none mb-1 mt-3 transition-colors duration-300 text-[#A35B1B]`}
-              >
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px]">
+              <span className="font-bungee text-sm tracking-wide leading-none mb-1 mt-3 text-[#A35B1B]">
                 PRICE POOL
               </span>
-
               <div className="flex items-center justify-center gap-2">
                 <img
                   src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
                   alt="coin"
                   className="w-8 h-8 md:w-7 md:h-7 object-contain"
                 />
-                {/* use the count-up animation */}
-                {(() => {
-                  const animatedPot = useCountUp(
-                    gameState?.totalPot ?? 0,
-                    1000
-                  );
-                  return (
-                    <span className="font-bungee text-3xl leading-none text-[#4E2A0B] transition-all duration-300">
-                      {animatedPot.toLocaleString("en-IN")}
-                    </span>
-                  );
-                })()}
+                <span className="font-bungee text-3xl leading-none text-[#4E2A0B]">
+                  {animatedPot.toLocaleString("en-IN")}
+                </span>
               </div>
             </div>
 
-            {/* === Active Players Section (Conditionally Rendered) === */}
+            {/* Active Players (mobile) */}
             {gameState && gameState.players.length > 0 && (
               <div className="relative w-full flex justify-center mt-60 mb-48 bg-[#ffffff]">
                 <div className="relative w-screen -mx-15 h-auto">
@@ -347,34 +652,25 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                     src="/images/active_players_background.png"
                     alt="Active Players Background"
                     className="absolute left-1/2 top-0 -translate-x-1/2 w-[100vw] md:w-[135vw] h-auto object-contain select-none pointer-events-none scale-100"
-                    style={{
-                      minHeight: "520px",
-                    }}
+                    style={{ minHeight: "520px" }}
                   />
                   <div className="absolute inset-0 flex flex-col items-center mt-[30px] px-4 z-10">
                     <div className="px-5 py-7 transition-all duration-500">
                       <span
                         className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
-                        style={{
-                          WebkitTextStroke: "3px #432311",
-                        }}
+                        style={{ WebkitTextStroke: "3px #432311" }}
                       >
                         ACTIVE PLAYERS
                       </span>
                     </div>
-                    {/* Container with paging for active players */}
                     <div className="w-full relative justify-center mt-[20px] transition-all duration-500">
                       <div
                         className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
-                        style={{
-                          maxHeight: "270px",
-                        }}
+                        style={{ maxHeight: "270px" }}
                       >
                         <div
                           className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
-                          style={{
-                            transform: `translateY(-${activePage * 270}px)`,
-                          }}
+                          style={{ transform: `translateY(-${activePage * 270}px)` }}
                         >
                           {gameState.players.map((player, index) => (
                             <div
@@ -391,11 +687,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   {player.name.toUpperCase()}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                  <img
-                                    src="/images/gameon_chip.png"
-                                    alt="coin"
-                                    className="w-4 h-4 object-contain"
-                                  />
+                                  <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
                                   <span className="text-[#FFD85A] font-bungee text-base">
                                     {player.amount.toFixed(2)}
                                   </span>
@@ -405,17 +697,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                           ))}
                         </div>
                       </div>
-
-                      {/* ▼ Scroll Down Button for Active Players */}
                       {gameState.players.length > activePlayersPerPage && (
                         <button
                           onClick={() =>
                             setActivePage((prev) =>
-                              prev + 1 >=
-                                Math.ceil(
-                                  gameState.players.length /
-                                  activePlayersPerPage
-                                )
+                              prev + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
                                 ? 0
                                 : prev + 1
                             )
@@ -428,16 +714,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             viewBox="0 0 24 24"
                             strokeWidth={3}
                             stroke="#341D1A"
-                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
-                              ? 'rotate-180'
-                              : ''
-                              }`}
+                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
+                              activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage)
+                                ? "rotate-180"
+                                : ""
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19 9l-7 7-7-7"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
                       )}
@@ -447,9 +730,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               </div>
             )}
 
-            {/* === Past Players Section (Always Visible) === */}
-            <div className={`relative w-full flex justify-center transition-all duration-500 ${gameState && gameState.players.length > 0 ? 'mt-[520px]' : 'mt-70'
-              }`}>
+            {/* Past Winners (mobile) */}
+            <div
+              className={`relative w-full flex justify-center transition-all duration-500 ${
+                gameState && gameState.players.length > 0 ? "mt-[520px]" : "mt-70"
+              }`}
+            >
               <div className="relative w-screen -mx-15 h-auto">
                 <img
                   src="/images/past_player_background.png"
@@ -472,19 +758,14 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                     </div>
                   ) : (
                     <>
-                      {/* Container with limited height */}
                       <div className="w-full flex justify-center mt-[5px] transition-all duration-500">
                         <div
                           className="flex flex-col items-center gap-3 overflow-hidden transition-all duration-700 ease-in-out"
-                          style={{
-                            maxHeight: "285px",
-                          }}
+                          style={{ maxHeight: "285px" }}
                         >
                           <div
                             className="flex flex-col items-center gap-3 transition-transform duration-700 ease-in-out"
-                            style={{
-                              transform: `translateY(-${winnerPage * 270}px)`,
-                            }}
+                            style={{ transform: `translateY(-${winnerPage * 270}px)` }}
                           >
                             {winners.map((winner, index) => (
                               <div
@@ -501,11 +782,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                     {winner.playerName.toUpperCase()}
                                   </span>
                                   <div className="flex items-center gap-1">
-                                    <img
-                                      src="/images/gameon_chip.png"
-                                      alt="coin"
-                                      className="w-4 h-4 object-contain"
-                                    />
+                                    <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
                                     <span className="text-[#FFD85A] font-bungee text-base">
                                       {winner.wonAmount.toFixed(2)}
                                     </span>
@@ -516,15 +793,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                           </div>
                         </div>
                       </div>
-
-                      {/* ▼ Scroll Down Button */}
                       {winners.length > 3 && (
                         <button
                           onClick={() =>
                             setWinnerPage((prev) =>
-                              prev + 1 >= Math.ceil(winners.length / 3)
-                                ? 0
-                                : prev + 1
+                              prev + 1 >= Math.ceil(winners.length / 3) ? 0 : prev + 1
                             )
                           }
                           className="mt-3 flex items-center justify-center transition-transform duration-300 hover:scale-110"
@@ -535,16 +808,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             viewBox="0 0 24 24"
                             strokeWidth={3}
                             stroke="#341D1A"
-                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${winnerPage + 1 >= Math.ceil(winners.length / 3)
-                              ? 'rotate-180'
-                              : ''
-                              }`}
+                            className={`w-6 h-6 transition-all duration-500 hover:translate-y-1 ${
+                              winnerPage + 1 >= Math.ceil(winners.length / 3) ? "rotate-180" : ""
+                            }`}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19 9l-7 7-7-7"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                           </svg>
                         </button>
                       )}
@@ -557,6 +825,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <DesktopLayout />
+      <MobileLayout />
+    </>
   );
 };
 

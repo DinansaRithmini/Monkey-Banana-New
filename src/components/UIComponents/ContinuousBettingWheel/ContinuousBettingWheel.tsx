@@ -265,9 +265,9 @@ const ContinuousBettingWheel: React.FC = () => {
 
   return (
     <div
-      className="relative w-full min-h-[1500px]"
+      className="relative w-full min-h-[1500px] lg:min-h-0 lg:h-screen lg:overflow-hidden"
       style={{
-        backgroundColor: "#F4E3C2", // 👈 fallback color
+        backgroundColor: "#F4E3C2",
         backgroundImage: "url('/images/background_image.png')",
         backgroundSize: "100% auto",
         backgroundPosition: "top center",
@@ -297,13 +297,13 @@ const ContinuousBettingWheel: React.FC = () => {
       </button>
 
       {/* ===== Scrollable Content ===== */}
-      <div className="flex flex-col items-center justify-start pb-20">
-        {/* Header */}
-        <div className="relative w-full flex flex-col items-center justify-center pt-12 pb-4">
+      <div className="flex flex-col items-center justify-start pb-20 lg:h-full lg:pb-0 lg:justify-center">
+        {/* Header — mobile only (desktop header is inside SlotMachine 3-col layout) */}
+        <div className="lg:hidden relative w-full flex flex-col items-center justify-center pt-10 pb-4">
           <img
             src="/images/monkey_eyes.gif"
             alt="Monkey Eyes"
-            className="swing w-[120px] h-auto md:w-[140px] absolute top-[20px] left-1/4 -translate-x-[50px] z-10"
+            className="swing w-[70px] h-auto md:w-[90px] absolute top-[16px] left-4 z-10"
           />
           <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff] mt-[10px]">
             MONKEY
@@ -312,8 +312,8 @@ const ContinuousBettingWheel: React.FC = () => {
           </h1>
         </div>
 
-        {/* Slot Machine */}
-        <div className="mt-8">
+        {/* Slot Machine — desktop renders full 3-col, mobile renders stacked */}
+        <div className="mt-8 lg:mt-0 lg:w-full lg:h-full">
           <SlotMachine
             players={gameState?.players || []}
             currentWinnerId={gameState?.winner?.id}
@@ -329,8 +329,8 @@ const ContinuousBettingWheel: React.FC = () => {
           />
         </div>
 
-        {/* Timer */}
-        <div>
+        {/* Timer — mobile only (desktop timer is inside SlotMachine right panel) */}
+        <div className="lg:hidden">
           <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
             {formatTime(gameState?.timeLeft ?? 0)}
           </span>

@@ -18,7 +18,12 @@ const path = require("path");
 const { verifyFrontendSignature } =  require("./middleware/auth");
 
 const privateKeyPath = path.join(__dirname, "./private_key.pem");
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+let privateKey = null;
+if (fs.existsSync(privateKeyPath)) {
+  privateKey = fs.readFileSync(privateKeyPath, "utf8");
+} else {
+  console.warn("⚠️  WARNING: private_key.pem not found. The /api/coinRelease endpoint will be unavailable.");
+}
 
 const GameManager = require("./gameManager")
 
