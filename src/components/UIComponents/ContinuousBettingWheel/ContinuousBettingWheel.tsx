@@ -274,6 +274,16 @@ const ContinuousBettingWheel: React.FC = () => {
         backgroundRepeat: "repeat-y",
       }}
     >
+      {/* Desktop background overlay — shown only on lg+ */}
+      <div
+        className="hidden lg:block absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/desktop-bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
       {/* Info Button - Top Right */}
       <button
         onClick={() => setShowInfoPopup(true)}
@@ -299,17 +309,25 @@ const ContinuousBettingWheel: React.FC = () => {
       {/* ===== Scrollable Content ===== */}
       <div className="flex flex-col items-center justify-start pb-20 lg:h-full lg:pb-0 lg:justify-center">
         {/* Header — mobile only (desktop header is inside SlotMachine 3-col layout) */}
-        <div className="lg:hidden relative w-full flex flex-col items-center justify-center pt-10 pb-4">
-          <img
-            src="/images/monkey_eyes.gif"
-            alt="Monkey Eyes"
-            className="swing w-[70px] h-auto md:w-[90px] absolute top-[16px] left-4 z-10"
-          />
-          <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff] mt-[10px]">
-            MONKEY
-            <br />
-            BANANA
-          </h1>
+        <div className="lg:hidden relative w-full flex flex-col items-center justify-center pb-4">
+          <div style={{ position: 'relative', display: 'inline-block', paddingTop: '36px', marginTop: '16px' }}>
+            <img
+              src="/images/monkey_eyes.gif"
+              alt="Monkey Eyes"
+              className="swing z-10 pointer-events-none"
+              style={{
+                position: 'absolute',
+                left: '-20px',
+                width: '44px',
+                height: 'auto',
+              }}
+            />
+            <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff]" style={{ display: 'inline-block' }}>
+              MONKEY
+              <br />
+              BANANA
+            </h1>
+          </div>
         </div>
 
         {/* Slot Machine — desktop renders full 3-col, mobile renders stacked */}

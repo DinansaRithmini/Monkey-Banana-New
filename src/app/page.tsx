@@ -4,7 +4,7 @@ import React from "react";
 import ContinuousBettingWheel from "../components/UIComponents/ContinuousBettingWheel/ContinuousBettingWheel";
 
 export default function HomePage() {
-  const appVersion = "v0.1.0";
+  const appVersion = "v0.1.1";
 
   return (
     <main className="relative min-h-screen lg:h-screen lg:overflow-hidden flex flex-col items-center justify-center bg-gradient-to-br from-[#FFF5C3] via-[#FFD85A] to-[#F7A531]">

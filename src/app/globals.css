@@ -138,18 +138,18 @@ body::-webkit-scrollbar {
 
 @keyframes swing {
   0% {
-    transform: rotate(10deg);
+    transform: rotate(28deg);
   }
   50% {
-    transform: rotate(-10deg);
+    transform: rotate(12deg);
   }
   100% {
-    transform: rotate(10deg);
+    transform: rotate(28deg);
   }
 }
 
 .swing {
-  animation: swing 2s ease-in-out infinite;
+  animation: swing 1.8s ease-in-out infinite;
   transform-origin: top center; /* makes it swing from the top */
 }
 

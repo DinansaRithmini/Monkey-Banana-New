@@ -481,26 +481,36 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         <div className="flex flex-col items-center gap-3">
 
           {/* TOP GROUP: Title + Balance */}
-          <div className="relative flex flex-col items-center gap-2">
-            <img
-              src="/images/monkey_eyes.gif"
-              alt="Monkey Eyes"
-              className="swing w-[52px] h-auto absolute -top-4 -left-16 z-10 pointer-events-none"
-            />
-            <div className="flex items-center justify-center">
-              <h1 className="font-bungee text-[#B26A42] text-2xl tracking-tight leading-[0.85] text-center drop-shadow-[2px_2px_2px_#fff]">
+          <div className="relative flex flex-col items-center gap-1">
+            {/* Title row — monkey hangs from the top of the M */}
+            <div style={{ position: 'relative', display: 'inline-block', paddingTop: '32px' }}>
+              <img
+                src="/images/monkey_eyes.gif"
+                alt="Monkey Eyes"
+                className="swing w-[36px] h-auto pointer-events-none z-10"
+                style={{
+                  position: 'absolute',
+                  left: '-20px',
+                }}
+              />
+              <h1 className="font-bungee text-[#B26A42] text-4xl tracking-tight leading-[0.9] text-center drop-shadow-[2px_2px_2px_#fff]" style={{ display: 'inline-block' }}>
                 MONKEY<br />BANANA
               </h1>
             </div>
-            <div className="flex items-center justify-center gap-2">
+            {/* Balance row */}
+            <div className="flex items-center justify-center gap-2 mt-1">
+              <span
+                className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]"
+              >
+                BALANCE:
+              </span>
               <img
                 src="/images/gameon_chip.png"
                 alt="coin"
                 className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />
               <span
-                className="text-[20px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B]"
-                style={{ WebkitTextStroke: "2px #432311" }}
+                className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]"
               >
                 {walletBalance?.toFixed(2) ?? "0.00"}
               </span>
