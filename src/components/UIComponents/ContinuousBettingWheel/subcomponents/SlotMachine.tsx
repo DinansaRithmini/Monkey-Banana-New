@@ -442,40 +442,94 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   // DESKTOP LAYOUT (lg+) — one-page, no scroll
   // ───────────────────────────────────────────────────
   const DesktopLayout = () => (
-    <div className="hidden lg:flex w-full h-screen overflow-hidden relative items-center px-8 gap-4">
-      {/* ── Left Panel: Active Players ── */}
-      <div className="w-[260px] shrink-0 flex flex-col justify-center items-center py-6">
-        {gameState && gameState.players.length > 0 ? (
-          <div className="w-full">
-            <ActivePlayersPanel compact={true} />
+    <div className="hidden lg:flex w-full max-w-[1450px] h-screen overflow-hidden relative items-center px-3 gap-3 mx-auto">
+
+      {/* ── Left Panel: Active Players (CSS-styled for desktop) ── */}
+      <div className="w-[300px] shrink-0 flex flex-col justify-center items-center py-6 z-10">
+        <div className="w-full rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, rgba(15,35,8,0.92) 0%, rgba(28,58,14,0.92) 100%)',
+            border: '2px solid #6aaa30',
+            boxShadow: '0 0 0 3px rgba(196,162,60,0.5), 0 8px 32px rgba(0,0,0,0.6)',
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-center py-3 px-4"
+            style={{ background: 'linear-gradient(90deg, #0d2208 0%, #1a3d0a 50%, #0d2208 100%)', borderBottom: '1px solid #4a8a20' }}
+          >
+            <span className="font-bungee text-sm tracking-widest"
+              style={{ color: '#f0c040', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
+            >
+              🌿 ACTIVE PLAYERS
+            </span>
           </div>
-        ) : (
-          <div className="relative w-full" style={{ height: "280px" }}>
-            <img
-              src="/images/active_players_background.png"
-              alt="Active Players Background"
-              className="absolute inset-0 w-full h-full object-fill select-none pointer-events-none"
-            />
-            <div className="absolute inset-0 z-10 flex flex-col items-center pt-5 pb-5 px-4">
-              <span
-                className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
-                style={{ WebkitTextStroke: "2px #432311" }}
-              >
-                ACTIVE PLAYERS
-              </span>
-              <div className="flex flex-col items-center justify-center flex-1 gap-3">
-                <span className="text-4xl">🐒</span>
-                <p className="text-[#4E2A0B] font-bungee text-sm text-center opacity-70">
+
+          {/* Body */}
+          <div className="flex flex-col p-3 gap-2" style={{ minHeight: '200px' }}>
+            {gameState && gameState.players.length > 0 ? (
+              <>
+                <div className="flex flex-col gap-2 overflow-hidden" style={{ maxHeight: '225px' }}>
+                  <div
+                    className="flex flex-col gap-2 transition-transform duration-700 ease-in-out"
+                    style={{ transform: `translateY(-${activePage * 225}px)` }}
+                  >
+                    {gameState.players.map((player, index) => (
+                      <div key={index}
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                        style={{
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '1px solid rgba(106,170,48,0.4)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                        }}
+                      >
+                        <img src={player.profileImage} alt={player.name}
+                          className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
+                          style={{ border: '2px solid #6aaa30' }}
+                        />
+                        <div className="flex flex-col min-w-0 flex-grow">
+                          <span className="font-bungee text-xs text-white truncate leading-tight"
+                            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                            {player.name.toUpperCase()}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
+                              {player.amount.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {gameState.players.length > activePlayersPerPage && (
+                  <button
+                    onClick={() => setActivePage(prev =>
+                      prev + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage) ? 0 : prev + 1
+                    )}
+                    className="mt-1 mx-auto flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3}
+                      stroke="#6aaa30" className={`w-5 h-5 transition-all duration-500 ${activePage + 1 >= Math.ceil(gameState.players.length / activePlayersPerPage) ? 'rotate-180' : ''}`}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center flex-1 gap-2 py-6">
+                <span className="text-3xl">🐒</span>
+                <p className="font-bungee text-xs text-center" style={{ color: '#6aaa30' }}>
                   Waiting for<br />players...
                 </p>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* ── Center: Header + Slot Machine ── */}
-      <div className="relative flex-1 flex flex-col items-center overflow-visible px-2" style={{ paddingBottom: "6%", paddingTop: "4%" }}>
+      <div className="relative flex-1 flex flex-col items-center overflow-visible px-2 z-10" style={{ paddingBottom: "6%", paddingTop: "4%" }}>
 
         {/* TOP + MIDDLE + Buttons grouped together */}
         <div className="flex flex-col items-center gap-3">
@@ -499,9 +553,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             </div>
             {/* Balance row */}
             <div className="flex items-center justify-center gap-2 mt-1">
-              <span
-                className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]"
-              >
+              <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
                 BALANCE:
               </span>
               <img
@@ -509,9 +561,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 alt="coin"
                 className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
               />
-              <span
-                className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]"
-              >
+              <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
                 {walletBalance?.toFixed(2) ?? "0.00"}
               </span>
             </div>
@@ -628,10 +678,87 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
       </div>
 
-      {/* ── Right Panel: Past Winners ── */}
-      <div className="w-[260px] shrink-0 flex flex-col justify-center items-center py-6">
-        <div className="w-full">
-          <PastWinnersPanel compact={true} />
+      {/* ── Right Panel: Past Winners (CSS-styled for desktop) ── */}
+      <div className="w-[300px] shrink-0 flex flex-col justify-center items-center py-6 z-10">
+        <div className="w-full rounded-2xl overflow-hidden"
+          style={{
+            background: 'linear-gradient(160deg, rgba(15,35,8,0.92) 0%, rgba(28,58,14,0.92) 100%)',
+            border: '2px solid #6aaa30',
+            boxShadow: '0 0 0 3px rgba(196,162,60,0.5), 0 8px 32px rgba(0,0,0,0.6)',
+          }}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-center py-3 px-4"
+            style={{ background: 'linear-gradient(90deg, #0d2208 0%, #1a3d0a 50%, #0d2208 100%)', borderBottom: '1px solid #4a8a20' }}
+          >
+            <span className="font-bungee text-sm tracking-widest"
+              style={{ color: '#f0c040', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
+            >
+              🏆 PAST WINNERS
+            </span>
+          </div>
+
+          {/* Body */}
+          <div className="flex flex-col p-3 gap-2" style={{ minHeight: '200px' }}>
+            {winners.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 gap-2 py-6">
+                <span className="text-3xl">🍌</span>
+                <p className="font-bungee text-xs text-center" style={{ color: '#6aaa30' }}>
+                  No winners yet.<br />Be the first!
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-2 overflow-hidden" style={{ maxHeight: '225px' }}>
+                  <div
+                    className="flex flex-col gap-2 transition-transform duration-700 ease-in-out"
+                    style={{ transform: `translateY(-${winnerPage * 225}px)` }}
+                  >
+                    {winners.map((winner, index) => (
+                      <div key={index}
+                        className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                        style={{
+                          background: 'rgba(0,0,0,0.4)',
+                          border: '1px solid rgba(240,192,64,0.35)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
+                        }}
+                      >
+                        <img src={winner.profileImage} alt={winner.playerName}
+                          className="w-9 h-9 rounded-lg object-cover flex-shrink-0"
+                          style={{ border: '2px solid #f0c040' }}
+                        />
+                        <div className="flex flex-col min-w-0 flex-grow">
+                          <span className="font-bungee text-xs text-white truncate leading-tight"
+                            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>
+                            {winner.playerName.toUpperCase()}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
+                              {winner.wonAmount.toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {winners.length > 3 && (
+                  <button
+                    onClick={() => setWinnerPage(prev =>
+                      prev + 1 >= Math.ceil(winners.length / 3) ? 0 : prev + 1
+                    )}
+                    className="mt-1 mx-auto flex items-center justify-center transition-transform duration-300 hover:scale-110"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3}
+                      stroke="#f0c040" className={`w-5 h-5 transition-all duration-500 ${winnerPage + 1 >= Math.ceil(winners.length / 3) ? 'rotate-180' : ''}`}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
