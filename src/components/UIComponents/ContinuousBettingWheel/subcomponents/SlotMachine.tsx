@@ -68,6 +68,43 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const [shouldSpin, setShouldSpin] = useState(false);
   const [previousTimeLeft, setPreviousTimeLeft] = useState(timeLeft);
   const [showAllWinners, setShowAllWinners] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const detectFullscreenLike = () => {
+      const doc = document as Document & { webkitFullscreenElement?: Element | null };
+      const isApiFullscreen = !!doc.fullscreenElement || !!doc.webkitFullscreenElement;
+
+      const viewportWidth = window.visualViewport?.width ?? window.innerWidth;
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+      const screenWidth = window.screen.availWidth || window.screen.width;
+      const screenHeight = window.screen.availHeight || window.screen.height;
+
+      const widthDelta = Math.abs(screenWidth - viewportWidth);
+      const heightDelta = Math.abs(screenHeight - viewportHeight);
+      const isViewportNearScreen = widthDelta <= 48 && heightDelta <= 140;
+
+      const isDisplayModeFullscreen = window.matchMedia("(display-mode: fullscreen)").matches;
+
+      setIsFullscreen(isApiFullscreen || isViewportNearScreen || isDisplayModeFullscreen);
+    };
+
+    detectFullscreenLike();
+
+    document.addEventListener("fullscreenchange", detectFullscreenLike);
+    document.addEventListener("webkitfullscreenchange", detectFullscreenLike as EventListener);
+    window.addEventListener("resize", detectFullscreenLike);
+    window.addEventListener("orientationchange", detectFullscreenLike);
+    window.visualViewport?.addEventListener("resize", detectFullscreenLike);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", detectFullscreenLike);
+      document.removeEventListener("webkitfullscreenchange", detectFullscreenLike as EventListener);
+      window.removeEventListener("resize", detectFullscreenLike);
+      window.removeEventListener("orientationchange", detectFullscreenLike);
+      window.visualViewport?.removeEventListener("resize", detectFullscreenLike);
+    };
+  }, []);
 
   const capitalizeFirstLetter = (str: string) =>
     str.charAt(0).toUpperCase() + str.slice(1);
@@ -406,14 +443,6 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   // ───────────────────────────────────────────────────
   const DesktopLayout = () => (
     <div className="hidden lg:flex w-full h-screen overflow-hidden relative items-center px-8 gap-4">
-
-      {/* Hanging monkey — absolute within h-screen container, matches mobile top-[16px] pivot */}
-      <img
-        src="/images/monkey_eyes.gif"
-        alt="Monkey Eyes"
-        className="swing w-[70px] h-auto absolute top-[16px] z-40 pointer-events-none"
-        style={{ left: "calc(50% - 140px)" }}
-      />
       {/* ── Left Panel: Active Players ── */}
       <div className="w-[260px] shrink-0 flex flex-col justify-center items-center py-6">
         {gameState && gameState.players.length > 0 ? (
@@ -446,13 +475,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
       </div>
 
       {/* ── Center: Header + Slot Machine ── */}
-      <div className="flex-1 flex flex-col items-center overflow-visible px-2" style={{ paddingBottom: "6%", paddingTop: "4%" }}>
+      <div className="relative flex-1 flex flex-col items-center overflow-visible px-2" style={{ paddingBottom: "6%", paddingTop: "4%" }}>
 
         {/* TOP + MIDDLE + Buttons grouped together */}
         <div className="flex flex-col items-center gap-3">
 
           {/* TOP GROUP: Title + Balance */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="relative flex flex-col items-center gap-2">
+            <img
+              src="/images/monkey_eyes.gif"
+              alt="Monkey Eyes"
+              className="swing w-[52px] h-auto absolute -top-4 -left-16 z-10 pointer-events-none"
+            />
             <div className="flex items-center justify-center">
               <h1 className="font-bungee text-[#B26A42] text-2xl tracking-tight leading-[0.85] text-center drop-shadow-[2px_2px_2px_#fff]">
                 MONKEY<br />BANANA
@@ -489,16 +523,37 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               />
             </div>
             {/* Scaled PricePoolBlock — timer hidden here, shown at bottom */}
-            <div style={{ transform: "scale(0.65)", transformOrigin: "center top", marginTop: "-14px", marginBottom: "-40px" }}>
+            <div
+              style={{
+                transform: "scale(0.65)",
+                transformOrigin: "center top",
+                marginTop: "-14px",
+                marginBottom: isFullscreen ? "-8px" : "-40px",
+              }}
+            >
               <PricePoolBlock showTimer={false} />
             </div>
           </div>
 
           {/* Phase message + Bet Buttons — right below price pool */}
-          <div className="flex flex-col items-center gap-2 mt-6">
+          <div
+            className={`flex flex-col items-center gap-2 ${isFullscreen ? "" : "mt-6"}`}
+            style={
+              isFullscreen
+                ? {
+                    position: "absolute",
+                    left: "50%",
+                    bottom: "58px",
+                    transform: "translateX(-50%)",
+                    zIndex: 30,
+                  }
+                : undefined
+            }
+          >
             <h2
               key={gameState?.phase + (hasJoined ? "-joined" : "")}
-              className="text-base font-bungee text-[#4E2A0B] text-center transition-opacity duration-700 ease-in-out opacity-100"
+              className="text-base font-bungee text-center transition-opacity duration-700 ease-in-out opacity-100 text-[#FFF5C3] drop-shadow-[0_3px_8px_rgba(0,0,0,0.85)]"
+              style={{ WebkitTextStroke: "1px #2F1B0E" }}
             >
               {phaseMessage}
             </h2>
@@ -538,7 +593,24 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </div>
 
         {/* TIMER — mt-auto pins it to the very bottom of the center column */}
-        <div className="mt-auto flex justify-center" style={{ paddingTop: "60px" }}>
+        <div
+          className="mt-auto flex justify-center"
+          style={{
+            ...(isFullscreen
+              ? {
+                  position: "absolute",
+                  left: "50%",
+                  bottom: "6px",
+                  transform: "translateX(-50%)",
+                  zIndex: 30,
+                }
+              : {
+                  paddingTop: "60px",
+                  paddingBottom: "0px",
+                  transform: "translateY(0px)",
+                }),
+          }}
+        >
           <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
             {formatTime(timeLeft)}
           </span>
