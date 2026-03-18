@@ -18,7 +18,12 @@ const path = require("path");
 const { verifyFrontendSignature } =  require("./middleware/auth");
 
 const privateKeyPath = path.join(__dirname, "./private_key.pem");
-const privateKey = fs.readFileSync(privateKeyPath, "utf8");
+let privateKey = null;
+if (fs.existsSync(privateKeyPath)) {
+  privateKey = fs.readFileSync(privateKeyPath, "utf8");
+} else {
+  console.warn("⚠️  WARNING: private_key.pem not found. The /api/coinRelease endpoint will be unavailable.");
+}
 
 const GameManager = require("./gameManager")
 
@@ -152,17 +157,71 @@ async function upsertPlayerProfile({ uuid, name, profileImage, email }) {
 // Socket.io connection handling
 // server.js (socket.io part)
 io.on("connection", (socket) => {
+  console.log("User connected:", socket.id)
+
   socket.on("joinGame", async (gameId) => {
     socket.join(gameId)
+    console.log(`Socket ${socket.id} joined game: ${gameId}`)
 
-    const game = await gameManager.getGame(gameId)
-    if (game) {
-      socket.emit("gameUpdated", game)
+    // If joining continuous game, send current state immediately
+    if (gameId === "continuous-betting-game") {
+      try {
+        const game = await ContinuousGame.findOne({ 
+          gameId: "continuous-betting-game", 
+          roundStatus: "active" 
+        }).sort({ roundNumber: -1 })
+        
+        if (game) {
+          console.log(`Sending game state to ${socket.id}: Round ${game.roundNumber}, Phase: ${game.phase}, ${game.players.length} players`)
+          // Send the game state as-is with all current properties
+          const gameState = {
+            id: game.gameId,
+            gameId: game.gameId,
+            players: game.players,
+            phase: game.phase,
+            timeLeft: game.timeLeft,
+            winner: game.winner,
+            rotation: game.rotation,
+            totalPot: game.totalPot,
+            roundNumber: game.roundNumber,
+            bettingStartTime: game.bettingStartTime,
+            roundStatus: game.roundStatus,
+            isActive: game.isActive,
+            createdAt: game.createdAt
+          }
+          socket.emit("gameUpdated", gameState)
+        } else {
+          console.log(`No active game found for ${socket.id}, sending empty state`)
+          // Send a default empty state if no game exists
+          socket.emit("gameUpdated", {
+            id: "continuous-betting-game",
+            gameId: "continuous-betting-game",
+            players: [],
+            phase: "betting",
+            timeLeft: 60,
+            winner: null,
+            rotation: 0,
+            totalPot: 0,
+            roundNumber: 0,
+            bettingStartTime: new Date(),
+            roundStatus: "active",
+            isActive: true
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching continuous game on join:", error)
+      }
+    } else {
+      const game = await gameManager.getGame(gameId)
+      if (game) {
+        socket.emit("gameUpdated", game)
+      }
     }
   })
 
   socket.on("leaveGame", (gameId) => {
     socket.leave(gameId)
+    console.log(`Socket ${socket.id} left game: ${gameId}`)
   })
 
   socket.on("addPlayer", async (data) => {
@@ -254,6 +313,20 @@ app.get("/api/winners/recent/:count", async (req, res) => {
 })
 
 // Continuous Game Management endpoints
+app.post("/api/continuous-game/broadcast", async (req, res) => {
+  try {
+    const { gameState } = req.body
+    
+    // Broadcast to all clients in the continuous game room
+    io.to("continuous-betting-game").emit("gameUpdated", gameState)
+    
+    res.json({ success: true })
+  } catch (error) {
+    console.error("Error broadcasting game update:", error)
+    res.status(500).json({ success: false, error: "Failed to broadcast update" })
+  }
+})
+
 app.post("/api/continuous-game/reset-collection", async (req, res) => {
   try {
     // Delete all documents in the collection
@@ -787,9 +860,9 @@ app.post("/api/createUserGame", async (req, res) => {
       });
     }
 
-    // Send email asynchronously without waiting for it to complete
-    axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload)
-      .catch(err => console.error("Error sending email notification:", err.message));
+    // // Send email asynchronously without waiting for it to complete
+    // axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload)
+    //   .catch(err => console.error("Error sending email notification:", err.message));
 
     return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
   } catch (err) {
@@ -826,6 +899,56 @@ app.get("/api/getUserWalletBalance", async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ success: false, message: "Error fetching wallet balance" });
+  }
+});
+
+app.post("/api/sendMessage", async (req, res) => {
+  const { uuid, sessionUuid, winnerName } = req.body;
+
+
+  if (!uuid || !sessionUuid) {
+    return res.status(400).json({ success: false, message: "Missing required fields: uuid, sessionUuid" });
+  }
+
+  const payload = {
+    uuid: uuid,                         // The user UUID (recipient of the notification)
+    notificationTypeCode: 'MONKEY_BANANA',              // The type of the notification (INFO, ALERT, etc.)
+    notificationText: `${winnerName} has won the Monkey Banana. Thank you for participating!`,  // The content of the notification
+    notificationReference: sessionUuid.toString(),  // The reference (could be a game session, etc.)
+    createdByUuid: uuid,             // UUID of the user who created the notification (optional)
+    relationalReferenceId: sessionUuid,              // ID for the relational reference (e.g., game session ID)
+    relationalReferenceEntity: 'monkey_banana'   // The entity this notification is related to (e.g., 'GameSession')
+  };
+
+  // 🔐 Step 1: Generate signed payload
+  const { signature, payload: body } = generateSignedRequest(payload, privateKey);
+
+  try {
+    // Step 1: Release coins
+    const releaseResponse = await axios.post(
+      `${GAMEON_BACKEND_URL}/api/sdk/v1/game-session/usercoin/sendMessage`,
+      JSON.parse(body),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Developer-ID": DEVELOPER_ID,
+          "X-Signature": signature,
+        }
+      }
+    );
+    console.log("Release body:", body);
+    console.log("Release response:", releaseResponse.data);
+
+    if (!releaseResponse.data?.status) {
+      return res.status(500).json({
+        status: false,
+        message: "Failed to release coins: " + (releaseResponse.data?.message || "Unknown error"),
+      });
+    }
+
+    return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
+  } catch (err) {
+    return res.status(500).json({ status: false, message: "Server error while releasing coins or joining game." });
   }
 });
 

@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import type { GameState } from "../lib/types"
+import { socketManager } from "../lib/socket"
 
 // Define bot types
 interface Bot {
@@ -21,6 +22,7 @@ const BOTS: Bot[] = [
 ];
 
 const BOT_BET_AMOUNTS = [1, 5];
+const CONTINUOUS_GAME_ID = "continuous-betting-game";
 
 export function useContinuousGame() {
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -33,6 +35,7 @@ export function useContinuousGame() {
   const [rawGameState, setRawGameState] = useState<GameState | null>(null)
   const [lastBotCheckTime, setLastBotCheckTime] = useState<number>(0)
   const [addedBots, setAddedBots] = useState<string[]>([])
+  const [clientTimeLeft, setClientTimeLeft] = useState<number>(60)
 
   // Get userId from URL on mount
   useEffect(() => {
@@ -81,72 +84,151 @@ export function useContinuousGame() {
     fetchPlayerDetails()
   }, [userId, gameSessionUuid])
 
-  const fetchGameState = useCallback(async () => {
-    try {
-      const response = await fetch("/api/continuous-game")
-      const data = await response.json()
-
-      if (data.success) {
-        setRawGameState(data.game)
-        setError(null)
-
-        // Check if we need to add bots
-        if (data.game && data.game.phase === "betting") {
-          const now = Date.now();
-          // Only check every 5 seconds to avoid too frequent checks
-          if (now - lastBotCheckTime > 5000) {
-            setLastBotCheckTime(now);
-
-            // Count real players (excluding bots)
-            const realPlayers = data.game.players.filter((player: { id: string; }) =>
-              !player.id.startsWith('bot-') && !addedBots.includes(player.id)
-            );
-
-            // Only add bots if there are less than 5 real players
-            if (realPlayers.length < 5) {
-              // Add bots at random intervals (not all at once)
-              const shouldAddBot = Math.random() < 0.3; // 30% chance to add a bot each check
-
-              if (shouldAddBot) {
-                const botsNeeded = 5 - realPlayers.length;
-                if (botsNeeded > 0) {
-                  addSingleBot();
-                }
-              }
-            }
-          }
-        }
-      } else {
-        setError(data.error)
-      }
-    } catch (err) {
-      setError("Failed to fetch game state")
-    } finally {
-      setLoading(false)
-    }
-  }, [lastBotCheckTime, addedBots])
-
-  // New effect to handle merging whenever avatar or raw state changes
+  // New effect to handle merging avatar and client timer whenever rawGameState or avatar changes
   useEffect(() => {
-    if (!rawGameState || !avatarImagePath || !userId) {
-      if (rawGameState) setGameState(rawGameState)
+    if (!rawGameState) {
+      setGameState(null)
+      return
+    }
+
+    if (!avatarImagePath || !userId) {
+      // If no avatar yet, just use raw state with client timer
+      setGameState({
+        ...rawGameState,
+        timeLeft: rawGameState.phase === "betting" ? clientTimeLeft : rawGameState.timeLeft
+      })
       return
     }
 
     const merged = {
       ...rawGameState,
       players: rawGameState.players.map((p) => (p.id === userId ? { ...p, profileImage: avatarImagePath } : p)),
+      // Only override timeLeft during betting phase with client-calculated value
+      timeLeft: rawGameState.phase === "betting" ? clientTimeLeft : rawGameState.timeLeft
     }
 
     setGameState(merged)
-  }, [rawGameState, avatarImagePath, userId])
+  }, [rawGameState, avatarImagePath, userId, clientTimeLeft])
 
-  // Poll for updates every second
+  // Client-side countdown timer - calculates time locally based on bettingStartTime
   useEffect(() => {
-    fetchGameState()
-    const interval = setInterval(fetchGameState, 1000)
+    if (!rawGameState) {
+      setClientTimeLeft(60)
+      return
+    }
+
+    // If not in betting phase, use server's timeLeft or default
+    if (rawGameState.phase !== "betting") {
+      setClientTimeLeft(rawGameState.timeLeft || 0)
+      return
+    }
+
+    // If no bettingStartTime, fallback to server's timeLeft
+    if (!rawGameState.bettingStartTime) {
+      setClientTimeLeft(rawGameState.timeLeft || 60)
+      return
+    }
+
+    const timerDuration = process.env.NEXT_PUBLIC_TIMER_DURATION 
+      ? parseInt(process.env.NEXT_PUBLIC_TIMER_DURATION) 
+      : 60
+
+    // Calculate initial time left
+    const calculateTimeLeft = () => {
+      const bettingStart = rawGameState.bettingStartTime
+      if (!bettingStart) {
+        return rawGameState.timeLeft || timerDuration
+      }
+
+      const startTime = typeof bettingStart === 'number' 
+        ? bettingStart 
+        : new Date(bettingStart).getTime()
+      
+      if (isNaN(startTime)) {
+        return rawGameState.timeLeft || timerDuration
+      }
+      
+      const elapsed = Math.floor((Date.now() - startTime) / 1000)
+      return Math.max(0, timerDuration - elapsed)
+    }
+
+    // Update immediately
+    const initialTimeLeft = calculateTimeLeft()
+    setClientTimeLeft(initialTimeLeft)
+    
+    console.log(`⏱️ Timer started for round ${rawGameState.roundNumber}: ${initialTimeLeft}s remaining`)
+
+    // Then update every second
+    const interval = setInterval(() => {
+      const timeLeft = calculateTimeLeft()
+      setClientTimeLeft(timeLeft)
+      
+      if (timeLeft <= 0) {
+        clearInterval(interval)
+      }
+    }, 1000)
+
     return () => clearInterval(interval)
-  }, [fetchGameState])
+  }, [rawGameState?.phase, rawGameState?.bettingStartTime, rawGameState?.roundNumber])
+
+  // Set up WebSocket connection and listeners
+  useEffect(() => {
+    console.log("🚀 Initializing WebSocket connection...")
+    
+    // Connect to socket FIRST
+    const socket = socketManager.connect()
+    console.log("🔌 WebSocket connected for continuous game")
+    
+    // Listen for game state updates BEFORE joining room
+    socketManager.onGameUpdated((game: GameState) => {
+      console.log("📡 WebSocket update received:", { 
+        round: game.roundNumber, 
+        phase: game.phase, 
+        players: game.players.length,
+        bettingStartTime: game.bettingStartTime 
+      })
+      setRawGameState(game)
+      setError(null)
+      setLoading(false)
+    })
+
+    // Small delay to ensure listener is registered before joining
+    const joinTimeout = setTimeout(() => {
+      // Join the continuous game room - server will send current state immediately
+      socketManager.joinGame(CONTINUOUS_GAME_ID)
+      console.log("🎮 Joined game room:", CONTINUOUS_GAME_ID)
+    }, 100)
+
+    // Fallback: fetch initial state if socket doesn't deliver within 2 seconds
+    const fallbackTimeout = setTimeout(async () => {
+      if (!rawGameState) {
+        console.log("⚠️ Fallback: fetching initial state via HTTP")
+        try {
+          const response = await fetch("/api/continuous-game")
+          const data = await response.json()
+
+          if (data.success) {
+            setRawGameState(data.game)
+            setError(null)
+          } else {
+            setError(data.error)
+          }
+        } catch (err) {
+          setError("Failed to fetch game state")
+        } finally {
+          setLoading(false)
+        }
+      }
+    }, 2000)
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(joinTimeout)
+      clearTimeout(fallbackTimeout)
+      console.log("🔌 WebSocket disconnected")
+      socketManager.disconnect()
+    }
+  }, []) // Empty dependency array - only run once on mount
 
   const addSingleBot = async () => {
     if (!gameState) return;
@@ -231,7 +313,6 @@ export function useContinuousGame() {
     error,
     joinGame,
     addBotsToGame,
-    refetch: fetchGameState,
     userId,
     playerName,
     gameSessionUuid,

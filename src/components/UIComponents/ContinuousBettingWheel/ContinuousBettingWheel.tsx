@@ -37,6 +37,7 @@ const ContinuousBettingWheel: React.FC = () => {
   const [showJackpotPopup, setShowJackpotPopup] = useState(false);
   const [previousPhase, setPreviousPhase] = useState<string | null>(null);
   const [currentRound, setCurrentRound] = useState(0);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
 
 
   useEffect(() => {
@@ -264,33 +265,73 @@ const ContinuousBettingWheel: React.FC = () => {
 
   return (
     <div
-      className="relative w-full min-h-[1500px]"
+      className="relative w-full min-h-[1500px] lg:min-h-0 lg:h-screen lg:overflow-hidden"
       style={{
-        backgroundColor: "#F4E3C2", // 👈 fallback color
+        backgroundColor: "#F4E3C2",
         backgroundImage: "url('/images/background_image.png')",
         backgroundSize: "100% auto",
         backgroundPosition: "top center",
         backgroundRepeat: "repeat-y",
       }}
     >
-      {/* ===== Scrollable Content ===== */}
-      <div className="flex flex-col items-center justify-start pb-20">
-        {/* Header */}
-        <div className="relative w-full flex flex-col items-center justify-center pt-12 pb-4">
-          <img
-            src="/images/monkey_eyes.gif"
-            alt="Monkey Eyes"
-            className="swing w-[120px] h-auto md:w-[140px] absolute top-[20px] left-1/4 -translate-x-[50px] z-10"
+      {/* Desktop background overlay — shown only on lg+ */}
+      <div
+        className="hidden lg:block absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage: "url('/images/desktop-bg.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          backgroundRepeat: "no-repeat",
+        }}
+      />
+      {/* Info Button - Top Right */}
+      <button
+        onClick={() => setShowInfoPopup(true)}
+        className="fixed top-4 right-4 z-50 bg-[#4E2A0B] hover:bg-[#6B3A1A] text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+        aria-label="How to play"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
           />
-          <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff] mt-[10px]">
-            MONKEY
-            <br />
-            BANANA
-          </h1>
+        </svg>
+      </button>
+
+      {/* ===== Scrollable Content ===== */}
+      <div className="flex flex-col items-center justify-start pb-20 lg:h-full lg:pb-0 lg:justify-center">
+        {/* Header — mobile only (desktop header is inside SlotMachine 3-col layout) */}
+        <div className="lg:hidden relative w-full flex flex-col items-center justify-center pb-4">
+          <div style={{ position: 'relative', display: 'inline-block', paddingTop: '36px', marginTop: '16px' }}>
+            <img
+              src="/images/monkey_eyes.gif"
+              alt="Monkey Eyes"
+              className="swing z-10 pointer-events-none"
+              style={{
+                position: 'absolute',
+                left: '-20px',
+                width: '44px',
+                height: 'auto',
+              }}
+            />
+            <h1 className="font-bungee text-[#B26A42] text-4xl md:text-5xl tracking-tight leading-[0.8] text-center drop-shadow-[2px_2px_2px_#fff]" style={{ display: 'inline-block' }}>
+              MONKEY
+              <br />
+              BANANA
+            </h1>
+          </div>
         </div>
 
-        {/* Slot Machine */}
-        <div className="mt-8">
+        {/* Slot Machine — desktop renders full 3-col, mobile renders stacked */}
+        <div className="mt-8 lg:mt-0 lg:w-full lg:h-full">
           <SlotMachine
             players={gameState?.players || []}
             currentWinnerId={gameState?.winner?.id}
@@ -306,8 +347,8 @@ const ContinuousBettingWheel: React.FC = () => {
           />
         </div>
 
-        {/* Timer */}
-        <div>
+        {/* Timer — mobile only (desktop timer is inside SlotMachine right panel) */}
+        <div className="lg:hidden">
           <span className="font-bungee text-3xl text-[#FFFFFF] drop-shadow-md">
             {formatTime(gameState?.timeLeft ?? 0)}
           </span>
@@ -341,6 +382,69 @@ const ContinuousBettingWheel: React.FC = () => {
         amount={gameState?.totalPot ?? 0}
         onClose={() => setShowJackpotPopup(false)}
       />
+
+      {/* Game Instructions Popup */}
+      {showInfoPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#FFF5C3] border-4 border-[#4E2A0B] rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bungee text-2xl text-[#4E2A0B]">How to Play</h2>
+              <button
+                onClick={() => setShowInfoPopup(false)}
+                className="text-[#4E2A0B] hover:text-[#6B3A1A] text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4 text-[#4E2A0B]">
+              <div>
+                <h3 className="font-bold text-lg mb-2">🎰 Game Overview</h3>
+                <p className="text-sm leading-relaxed">
+                  Monkey Banana is an exciting game where players compete for the jackpot! Place your wager and watch as the slot machine spins to determine the winner.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-bold text-lg mb-2">💰 How to Play</h3>
+                <ol className="text-sm space-y-2 list-decimal list-inside">
+                  <li>Check your wallet balance at the top of the slot machine</li>
+                  <li>Click "Add" to confirm your wager</li>
+                  <li>Wait for other players to join the round</li>
+                  <li>Watch the slot machine spin when the timer runs out</li>
+                  <li>If you win, you take home the entire pot!</li>
+                </ol>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">🏆 Winning</h3>
+                <p className="text-sm leading-relaxed">
+                  The slot machine randomly selects one player as the winner. The total pot is displayed and updates as more players join.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-bold text-lg mb-2">⏱️ Timer</h3>
+                <p className="text-sm leading-relaxed">
+                  Each round has a countdown timer. Place your wagers before time runs out! A new round starts automatically after each spin.
+                </p>
+              </div>
+
+              <div className="bg-[#F7A531]/20 p-3 rounded-lg">
+                <p className="text-xs font-semibold">
+                  💡 Tip: Keep an eye on the total pot and number of players to make strategic wagering decisions!
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowInfoPopup(false)}
+              className="mt-6 w-full bg-[#4E2A0B] hover:bg-[#6B3A1A] text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200"
+            >
+              Got It!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 
