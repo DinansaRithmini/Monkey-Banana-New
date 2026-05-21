@@ -312,6 +312,24 @@ app.get("/api/winners/recent/:count", async (req, res) => {
   }
 })
 
+app.get("/api/winners/top", async (req, res) => {
+  try {
+    const gameSessionUuid = req.query.gameSessionUuid || "continuous-game"
+
+    const winner = await Winner.findOne({ gameSessionUuid })
+      .sort({ wonAmount: -1, winDate: -1 })
+      .lean()
+
+    if (!winner) {
+      return res.json({ success: true, winner: null })
+    }
+
+    res.json({ success: true, winner })
+  } catch (error) {
+    res.status(500).json({ success: false, error: "Failed to fetch top winner" })
+  }
+})
+
 // Continuous Game Management endpoints
 app.post("/api/continuous-game/broadcast", async (req, res) => {
   try {
