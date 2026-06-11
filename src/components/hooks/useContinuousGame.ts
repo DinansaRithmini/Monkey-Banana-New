@@ -36,6 +36,7 @@ export function useContinuousGame() {
   const [lastBotCheckTime, setLastBotCheckTime] = useState<number>(0)
   const [addedBots, setAddedBots] = useState<string[]>([])
   const [clientTimeLeft, setClientTimeLeft] = useState<number>(60)
+  const [isGuest, setIsGuest] = useState<boolean>(false)
 
   // Get userId from URL on mount
   useEffect(() => {
@@ -43,6 +44,10 @@ export function useContinuousGame() {
 
     const uuidFromUrl = params.get("uuid") || params.get("userId")
     const sessionUuidFromUrl = params.get("gameSessionUuid") || params.get("room")
+
+    // No gameSessionUuid + player id in URL → spectator (guest) mode:
+    // show the latest round, but redirect to login when they try to bet
+    setIsGuest(!uuidFromUrl || !sessionUuidFromUrl)
 
     // userId
     if (uuidFromUrl) {
@@ -317,5 +322,6 @@ export function useContinuousGame() {
     playerName,
     gameSessionUuid,
     avatarImagePath,
+    isGuest,
   }
 }
