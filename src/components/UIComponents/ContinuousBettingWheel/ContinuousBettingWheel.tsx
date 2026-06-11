@@ -13,6 +13,16 @@ import LosePopup from "./subcomponents/losepopup";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+const LOGIN_REDIRECT_URL =
+  "https://gameonworld.ai/?showLogin=true&callbackUrl=%2Fgame%2F40";
+
+const requestLogin = () => {
+  window.parent.postMessage(
+    { type: "showLogin", url: LOGIN_REDIRECT_URL },
+    "*"
+  );
+};
+
 const ContinuousBettingWheel: React.FC = () => {
   const {
     gameState,
@@ -22,6 +32,7 @@ const ContinuousBettingWheel: React.FC = () => {
     userId,
     playerName,
     gameSessionUuid,
+    isGuest,
   } = useContinuousGame();
 
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -85,6 +96,10 @@ const ContinuousBettingWheel: React.FC = () => {
 
   // Handle Add Bet
   const handleQuickBet = (amount: number) => {
+    if (isGuest) {
+      requestLogin();
+      return;
+    }
     if (!playerName?.trim()) return alert("Please enter your name first");
     if ((walletBalance ?? 0) < amount) return setShowInsufficient(true);
     setPendingBet(amount);
@@ -92,6 +107,11 @@ const ContinuousBettingWheel: React.FC = () => {
   };
 
   const handleAddBet = () => {
+    if (isGuest) {
+      requestLogin();
+      return;
+    }
+
     // Default bet amount to 1, or you can prompt user for custom amount
     const defaultBetAmount = 1;
 
@@ -344,6 +364,7 @@ const ContinuousBettingWheel: React.FC = () => {
             playerName={playerName}
             hasJoined={hasJoined}
             userId={userId}
+            isGuest={isGuest}
           />
         </div>
 

@@ -45,6 +45,7 @@ interface SlotMachineProps {
   playerName: string | null;
   hasJoined: boolean;
   userId: string | null;
+  isGuest?: boolean;
 }
 
 const SlotMachine: React.FC<SlotMachineProps> = ({
@@ -59,6 +60,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   playerName,
   hasJoined,
   userId,
+  isGuest,
 }) => {
   // Select current player (winner or fallback)
   const currentPlayer =
@@ -210,8 +212,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 
   // Phase message
   const phaseMessage = (() => {
-    if (!playerName)
+    if (!playerName) {
+      if (isGuest) {
+        const phase = gameState?.phase;
+        if (phase === "betting") return "Sign in to place your wager! ";
+        if (phase === "spinning") return "The wheel is spinning... ";
+        if (phase === "finished") return "Sign in to join the next round! ";
+        if (phase === "round_ending")
+          return "Round ending — get ready for the next one! ";
+        return "Welcome to Monkey Banana ";
+      }
       return "Welcome player! Enter your name to start playing.";
+    }
 
     const name = capitalizeFirstLetter(playerName);
     const phase = gameState?.phase;
@@ -617,7 +629,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             >
               {phaseMessage}
             </h2>
-            {gameState?.phase === "betting" && !hasJoined && playerName && (
+            {gameState?.phase === "betting" && !hasJoined && (playerName || isGuest) && (
               <div className="flex justify-center items-center">
                 <button
                   onClick={() => onQuickBet(1)}
@@ -811,7 +823,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         </h2>
 
         {/* Bet Buttons */}
-        {gameState?.phase === "betting" && !hasJoined && playerName && (
+        {gameState?.phase === "betting" && !hasJoined && (playerName || isGuest) && (
           <div className="flex justify-center items-center mt-6">
             <button
               onClick={() => onQuickBet(1)}
