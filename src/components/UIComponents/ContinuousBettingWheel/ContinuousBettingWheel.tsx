@@ -14,7 +14,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const LOGIN_REDIRECT_URL =
-  "https://gameonworld.ai/?showLogin=true&callbackUrl=%2Fgame%2F23";
+  "https://gameonworld.ai/?showLogin=true&callbackUrl=%2Fgame%2F40";
+
+const requestLogin = () => {
+  window.parent.postMessage(
+    { type: "showLogin", url: LOGIN_REDIRECT_URL },
+    "*"
+  );
+};
 
 const ContinuousBettingWheel: React.FC = () => {
   const {
@@ -90,7 +97,7 @@ const ContinuousBettingWheel: React.FC = () => {
   // Handle Add Bet
   const handleQuickBet = (amount: number) => {
     if (isGuest) {
-      window.location.href = LOGIN_REDIRECT_URL;
+      requestLogin();
       return;
     }
     if (!playerName?.trim()) return alert("Please enter your name first");
@@ -101,7 +108,7 @@ const ContinuousBettingWheel: React.FC = () => {
 
   const handleAddBet = () => {
     if (isGuest) {
-      window.location.href = LOGIN_REDIRECT_URL;
+      requestLogin();
       return;
     }
 
