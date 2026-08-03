@@ -16,6 +16,11 @@ const axios = require("axios");
 const fs = require('fs');
 const path = require("path");
 const { verifyFrontendSignature } =  require("./middleware/auth");
+const {
+  resolveSessionToken,
+  exchangeLaunchTicketWithPlatform,
+  InvalidSessionTokenError,
+} = require("./utils/session");
 
 const privateKeyPath = path.join(__dirname, "./private_key.pem");
 let privateKey = null;
@@ -836,18 +841,64 @@ app.post("/api/coinRelease", verifyFrontendSignature, async (req, res) => {
   }
 });
 
-// POST /api/releaseCoinsAndJoinGame
-app.post("/api/createUserGame", async (req, res) => {
-  const { sessionUuid, userUuid, name, gameSessionUuid, amount } = req.body;
+// POST /api/exchange-launch-ticket
+// Relay for the single-use ticket this game's frontend receives via
+// postMessage from the platform parent frame. The frontend never calls the
+// GameON backend directly — this mirrors getPlayerDetails/getUserWalletBalance
+// above. Exchanges the ticket for a longer-lived sessionToken, which the
+// frontend then sends on every bet.
+app.post("/api/exchange-launch-ticket", async (req, res) => {
+  const { launchTicket } = req.body;
 
-
-  if (!userUuid) {
-    return res.status(400).json({ success: false, message: "Missing required fields: uuid, amount, actionType" });
+  if (!launchTicket) {
+    return res.status(400).json({ success: false, message: "launchTicket is required" });
   }
+
+  try {
+    const sessionToken = await exchangeLaunchTicketWithPlatform(launchTicket);
+
+    if (!sessionToken) {
+      return res.status(400).json({ success: false, message: "Invalid or expired launch ticket" });
+    }
+
+    return res.json({ success: true, sessionToken });
+  } catch (err) {
+    console.error("exchange-launch-ticket error:", err?.message);
+    return res.status(500).json({ success: false, message: "Failed to exchange launch ticket" });
+  }
+});
+
+// POST /api/createUserGame — BET (hold the player's stake)
+// Identity comes from sessionToken alone. A `userUuid` in the body would be
+// whatever the player typed into devtools, so it is neither read nor forwarded:
+// the platform derives the real uuid from the token itself.
+app.post("/api/createUserGame", async (req, res) => {
+  const { sessionUuid, sessionToken, name, gameSessionUuid, amount } = req.body;
+
+  if (!sessionToken) {
+    return res.status(400).json({ success: false, message: "Missing required field: sessionToken" });
+  }
+
+  if (sessionUuid === undefined || sessionUuid === null) {
+    return res.status(400).json({ success: false, message: "Missing required field: sessionUuid" });
+  }
+
+  // Resolved up front so a forged token is rejected before any coins are held.
+  let userUuid;
+  try {
+    userUuid = await resolveSessionToken(sessionToken);
+  } catch (err) {
+    if (err instanceof InvalidSessionTokenError) {
+      return res.status(400).json({ status: false, message: err.message });
+    }
+    throw err;
+  }
+
+  console.log(`BET for platform-verified uuid ${userUuid} (amount ${amount})`);
 
   const payload = {
     sessionUuid: sessionUuid.toString(),
-    userUuid,
+    sessionToken,
     gameSessionUuid,
     amount,
   };

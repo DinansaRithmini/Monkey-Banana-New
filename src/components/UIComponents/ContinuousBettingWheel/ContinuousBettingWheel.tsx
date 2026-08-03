@@ -33,6 +33,7 @@ const ContinuousBettingWheel: React.FC = () => {
     playerName,
     gameSessionUuid,
     isGuest,
+    sessionToken,
   } = useContinuousGame();
 
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
@@ -134,11 +135,19 @@ const ContinuousBettingWheel: React.FC = () => {
     if (!pendingBet) return;
     setShowBetPopup(false);
 
+    // Without the platform's session token there is no verifiable identity to
+    // bet as, so the backend would reject this anyway.
+    if (!sessionToken) {
+      alert("Your session isn't ready yet. Please reload the game and try again.");
+      setPendingBet(null);
+      return;
+    }
+
     try {
       const releaseResponse = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/createUserGame`,
         {
-          userUuid: userId,
+          sessionToken,
           gameSessionUuid,
           sessionUuid: gameState?.roundNumber,
           amount: pendingBet,

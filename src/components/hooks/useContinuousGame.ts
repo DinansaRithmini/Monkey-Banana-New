@@ -4,6 +4,9 @@
 import { useState, useEffect, useCallback } from "react"
 import type { GameState } from "../lib/types"
 import { socketManager } from "../lib/socket"
+// Imported for its module-load side effect as much as for the promise: it must
+// attach the GAMEON_LAUNCH_TICKET listener before React mounts.
+import { sessionTokenPromise } from "../../utils/session"
 
 // Define bot types
 interface Bot {
@@ -37,6 +40,13 @@ export function useContinuousGame() {
   const [addedBots, setAddedBots] = useState<string[]>([])
   const [clientTimeLeft, setClientTimeLeft] = useState<number>(60)
   const [isGuest, setIsGuest] = useState<boolean>(false)
+  const [sessionToken, setSessionToken] = useState<string | null>(null)
+
+  // The platform-verified identity. Resolves once the launch ticket posted into
+  // this iframe has been exchanged; stays null for guests, who cannot bet.
+  useEffect(() => {
+    sessionTokenPromise.then(setSessionToken)
+  }, [])
 
   // Get userId from URL on mount
   useEffect(() => {
@@ -282,8 +292,10 @@ export function useContinuousGame() {
 
   const joinGame = useCallback(
     async (name: string, amount: number) => {
-      if (!userId) {
-        return { success: false, error: "User ID not available" }
+      // The seat on the wheel decides who collects the pot, so it is claimed
+      // with the session token — never with a client-supplied user id.
+      if (!sessionToken) {
+        return { success: false, error: "Session not ready" }
       }
 
       try {
@@ -293,7 +305,7 @@ export function useContinuousGame() {
           body: JSON.stringify({
             name,
             amount,
-            userId,
+            sessionToken,
             profileImage: avatarImagePath || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png",
           }),
         })
@@ -309,7 +321,7 @@ export function useContinuousGame() {
         return { success: false, error: "Failed to join game" }
       }
     },
-    [userId, avatarImagePath],
+    [sessionToken, avatarImagePath],
   )
 
   return {
@@ -323,5 +335,6 @@ export function useContinuousGame() {
     gameSessionUuid,
     avatarImagePath,
     isGuest,
+    sessionToken,
   }
 }
