@@ -1,8 +1,10 @@
 "use client";
 import React from "react";
+import Lottie from "lottie-react";
 import { useT } from "../../../../i18n";
 import { Money } from "../../../../currency/Money";
 import { useCurrency } from "../../../../currency";
+import happyMonkeyAnimation from "../../../../../public/happy-monkey.json";
 
 interface BetConfirmationPopupProps {
   show: boolean;
@@ -40,11 +42,12 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
       >
         {/* Popup Content */}
         <div className="flex flex-col items-center justify-center h-full text-center">
-          {/* Gold Coin Image */}
-          <img
-            src="/images/gold_coin.png"
-            alt="Gold Coin"
-            className="w-[80px] h-[80px] my-2 animate-pulse drop-shadow-[0_0_10px_#FFD85A]"
+          {/* Happy Monkey Animation */}
+          <Lottie
+            animationData={happyMonkeyAnimation}
+            loop
+            autoplay
+            className="w-[80px] h-[80px] my-2 drop-shadow-[0_0_10px_#FFD85A]"
           />
           {/* Title */}
           <h2 className="text-[#A96229] text-lg px-2 font-bungee leading-tight mb-4 mt-[10px]">
