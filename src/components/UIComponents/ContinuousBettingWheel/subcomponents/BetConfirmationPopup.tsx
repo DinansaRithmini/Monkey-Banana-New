@@ -6,6 +6,24 @@ import { Money } from "../../../../currency/Money";
 import { useCurrency } from "../../../../currency";
 import happyMonkeyAnimation from "../../../../../public/happy-monkey.json";
 
+/**
+ * The exported animation paints an opaque card behind the monkey: a white
+ * 400×400 solid at the bottom of the stack (26), a light-grey circle over it
+ * (25), and a second white solid (2) track-matted by (1) so it fills everything
+ * *outside* that circle. Dropping those four leaves the monkey on transparency,
+ * which is what the popup wants.
+ *
+ * "Background 5" (23) deliberately stays: it is a matte (`td: 1`), never drawn,
+ * and the body layer is clipped to it — remove it and the body renders unclipped.
+ */
+const OPAQUE_BACKGROUND_LAYERS = [1, 2, 25, 26];
+const happyMonkey = {
+  ...happyMonkeyAnimation,
+  layers: happyMonkeyAnimation.layers.filter(
+    (layer) => !OPAQUE_BACKGROUND_LAYERS.includes(layer.ind)
+  ),
+};
+
 interface BetConfirmationPopupProps {
   show: boolean;
   amount: number;
@@ -44,10 +62,10 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
         <div className="flex flex-col items-center justify-center h-full text-center">
           {/* Happy Monkey Animation */}
           <Lottie
-            animationData={happyMonkeyAnimation}
+            animationData={happyMonkey}
             loop
             autoplay
-            className="w-[80px] h-[80px] my-2 drop-shadow-[0_0_10px_#FFD85A]"
+            className="w-[130px] h-[130px] -my-2 drop-shadow-[0_0_10px_#FFD85A]"
           />
           {/* Title */}
           <h2 className="text-[#A96229] text-lg px-2 font-bungee leading-tight mb-4 mt-[10px]">
