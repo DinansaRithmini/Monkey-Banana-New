@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
+import { useT } from "../../../i18n";
+import { Money } from "../../../currency/Money";
+import { useMoney, useCurrency } from "../../../currency";
 
 // Type definitions
 interface Winner {
@@ -23,6 +26,9 @@ interface PastWinnersProps {
  * Displays recent winners with their coin amounts and avatars.
  */
 export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
+  const t = useT();
+  const fmt = useMoney();
+  const { currency } = useCurrency();
   const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,17 +49,14 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
         setWinners(data.winners);
         setError(null);
       } else {
-        setError("Failed to load winners");
+        setError(t("error.loadWinnersFailed"));
       }
     } catch (err) {
-      setError("Failed to load winners");
+      setError(t("error.loadWinnersFailed"));
     } finally {
       setLoading(false);
     }
   };
-
-  const formatNumber = (amount: number) =>
-    new Intl.NumberFormat("en-IN", { minimumFractionDigits: 0 }).format(amount);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
@@ -71,7 +74,7 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
     return (
       <Card className="bg-gradient-to-b from-[#FFD85A] to-[#F7A531] border-none backdrop-blur">
         <CardContent className="p-4 text-center text-[#4E2A0B] font-semibold">
-          Loading past winners...
+          {t("loading.winners")}
         </CardContent>
       </Card>
     );
@@ -95,11 +98,11 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
         <div className="pb-3">
           <h3 className="flex items-center justify-center gap-2 text-[#4E2A0B] font-bold">
             <Trophy className="w-5 h-5 text-[#4E2A0B]" />
-            Past Winners
+            {t("common.pastWinnersTitleCase")}
           </h3>
         </div>
         <CardContent className="text-center text-[#4E2A0B]/70 pb-4">
-          No winners yet. Be the first!
+          {t("common.noWinnersYet")}
         </CardContent>
       </Card>
     );
@@ -142,7 +145,10 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
                       {winner.playerName}
                     </p>
                     <p className="text-[#4E2A0B]/70 text-xs">
-                      Placed {winner.betAmount} • {formatDate(winner.createdAt)}
+                      {t("pastWinners.placedLine", {
+                        amount: fmt(winner.betAmount),
+                        date: formatDate(winner.createdAt),
+                      })}
                     </p>
                   </div>
                 </div>
@@ -150,13 +156,15 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
                 {/* Right: Won Amount */}
                 <div className="text-right">
                   <p className="text-[#4E2A0B] font-bold text-sm flex items-center justify-end">
-                    WON
-                    <img
-                      src={coinImgPath}
-                      alt="coin"
-                      className="w-5 h-5 mx-1 inline-block"
-                    />
-                    {formatNumber(winner.wonAmount)}
+                    {t("common.won")}
+                    {currency !== "lkr" && (
+                      <img
+                        src={coinImgPath}
+                        alt="coin"
+                        className="w-5 h-5 mx-1 inline-block"
+                      />
+                    )}
+                    <Money amount={winner.wonAmount} grouped />
                   </p>
                 </div>
               </CardContent>

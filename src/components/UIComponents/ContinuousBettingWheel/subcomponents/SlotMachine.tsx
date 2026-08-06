@@ -2,6 +2,9 @@
 import { useState, useEffect } from "react";
 import SlotMachineReel from "./subcomponents/SlotMachineReel";
 import type { GameState, Winner } from "../../../lib/types";
+import { useT } from "../../../../i18n";
+import { Money } from "../../../../currency/Money";
+import { useCurrency } from "../../../../currency";
 // --- Count-up animation hook ---
 function useCountUp(targetValue: number, duration = 800) {
   const [current, setCurrent] = useState(0);
@@ -62,6 +65,20 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   userId,
   isGuest,
 }) => {
+  const t = useT();
+  // The coin icon stands in for the "Gameon Chips" unit — an LKR amount
+  // already carries its own "Rs" prefix from <Money>, so the icon is
+  // redundant (and wrong-looking) once the player has switched to rupees.
+  const { currency, rate } = useCurrency();
+  const showChipIcon = currency !== "lkr";
+  // The quick-bet button always adds exactly 1 USD (see onQuickBet(1) below) —
+  // in LKR mode the label must show that same amount converted at the live
+  // rate, not the literal "1".
+  const quickBetLabel =
+    currency === "lkr"
+      ? `+ ${Math.round(rate).toLocaleString("en-US")}`
+      : t("common.quickBetPlusOne");
+
   // Select current player (winner or fallback)
   const currentPlayer =
     players.find((p) => p.id === currentWinnerId) || players[0];
@@ -111,6 +128,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   const capitalizeFirstLetter = (str: string) =>
     str.charAt(0).toUpperCase() + str.slice(1);
 
+  // Unused — `phaseMessage` below is what actually renders. Kept in English
+  // since it's dead code; not worth dedicated i18n keys for text no player sees.
   const getPhaseMessage = () => {
     if (!gameState) return "";
 
@@ -198,10 +217,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         setWinners(data.winners);
         setError(null);
       } else {
-        setError("Failed to load winners");
+        setError(t("error.loadWinnersFailed"));
       }
     } catch (err) {
-      setError("Failed to load winners");
+      setError(t("error.loadWinnersFailed"));
     } finally {
       setLoading(false);
     }
@@ -215,38 +234,35 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
     if (!playerName) {
       if (isGuest) {
         const phase = gameState?.phase;
-        if (phase === "betting") return "Sign in to place your wager! ";
-        if (phase === "spinning") return "The wheel is spinning... ";
-        if (phase === "finished") return "Sign in to join the next round! ";
-        if (phase === "round_ending")
-          return "Round ending — get ready for the next one! ";
-        return "Welcome to Monkey Banana ";
+        if (phase === "betting") return t("phase.guestBetting");
+        if (phase === "spinning") return t("phase.spinning");
+        if (phase === "finished") return t("phase.guestFinished");
+        if (phase === "round_ending") return t("phase.roundEnding");
+        return t("phase.guestWelcome");
       }
-      return "Welcome player! Enter your name to start playing.";
+      return t("phase.enterName");
     }
 
     const name = capitalizeFirstLetter(playerName);
     const phase = gameState?.phase;
 
     if (phase === "betting") {
-      return hasJoined
-        ? `Your wager has been placed, good luck! `
-        : `Hey ${name}, Place your wager! `;
+      return hasJoined ? t("phase.placedWager") : t("phase.placeWager", { name });
     }
     if (phase === "spinning") {
-      return `The wheel is spinning... `;
+      return t("phase.spinning");
     }
     if (phase === "finished") {
       const isWinner = gameState?.winner?.id === userId;
       const playerInRound = gameState?.players.some((p) => p.id === userId);
-      if (isWinner) return `Congratulations ${name}, You won this round! `;
-      else if (hasJoined || playerInRound) return `Better luck next time, ${name}! `;
-      else return `Hey ${name}, join the next round! `;
+      if (isWinner) return t("phase.won", { name });
+      else if (hasJoined || playerInRound) return t("phase.lost", { name });
+      else return t("phase.joinNext", { name });
     }
     if (phase === "round_ending") {
-      return `Round ending — get ready for the next one! `;
+      return t("phase.roundEnding");
     }
-    return `Hey ${name}, Welcome to Monkey Banana `;
+    return t("phase.welcomeName", { name });
   })();
 
   // ───────────────────────────────────────────────────
@@ -265,16 +281,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[35px] lg:translate-x-[40px]">
           <span className="font-bungee text-sm tracking-wide leading-none mb-1 mt-3 text-[#A35B1B]">
-            PRICE POOL
+            {t("common.pricePool")}
           </span>
           <div className="flex items-center justify-center gap-2">
-            <img
-              src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
-              alt="coin"
-              className="w-6 h-6 object-contain"
-            />
+            {showChipIcon && (
+              <img
+                src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                alt="coin"
+                className="w-6 h-6 object-contain"
+              />
+            )}
             <span className="font-bungee text-2xl leading-none text-[#4E2A0B]">
-              {animatedPot.toLocaleString("en-IN")}
+              <Money amount={animatedPot} grouped />
             </span>
           </div>
         </div>
@@ -306,7 +324,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
             style={{ WebkitTextStroke: "2px #432311" }}
           >
-            ACTIVE PLAYERS
+            {t("common.activePlayers")}
           </span>
 
           {/* Scrollable cards window */}
@@ -333,9 +351,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       {player.name.toUpperCase()}
                     </span>
                     <div className="flex items-center gap-1">
-                      <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      {showChipIcon && (
+                        <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      )}
                       <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
-                        {player.amount.toFixed(2)}
+                        <Money amount={player.amount} />
                       </span>
                     </div>
                   </div>
@@ -382,12 +402,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
           className="font-bungee text-white text-xl drop-shadow-[2px_2px_0_#4E2A0B] mb-4"
           style={{ WebkitTextStroke: "2px #432311" }}
         >
-          PAST WINNERS
+          {t("common.pastWinners")}
         </span>
 
         {winners.length === 0 ? (
           <div className="text-center text-white/60 py-4 text-sm">
-            No winners yet. Be the first!
+            {t("common.noWinnersYet")}
           </div>
         ) : (
           <>
@@ -415,9 +435,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         {winner.playerName.toUpperCase()}
                       </span>
                       <div className="flex items-center gap-1">
+                        {showChipIcon && (
                         <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      )}
                         <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
-                          {winner.wonAmount.toFixed(2)}
+                          <Money amount={winner.wonAmount} />
                         </span>
                       </div>
                     </div>
@@ -472,7 +494,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             <span className="font-bungee text-sm tracking-widest"
               style={{ color: '#f0c040', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
             >
-              🌿 ACTIVE PLAYERS
+              {t("common.activePlayersLeaf")}
             </span>
           </div>
 
@@ -504,9 +526,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             {player.name.toUpperCase()}
                           </span>
                           <div className="flex items-center gap-1">
-                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            {showChipIcon && (
+                              <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            )}
                             <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
-                              {player.amount.toFixed(2)}
+                              <Money amount={player.amount} />
                             </span>
                           </div>
                         </div>
@@ -532,7 +556,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               <div className="flex flex-col items-center justify-center flex-1 gap-2 py-6">
                 <span className="text-3xl">🐒</span>
                 <p className="font-bungee text-xs text-center" style={{ color: '#6aaa30' }}>
-                  Waiting for<br />players...
+                  {t("common.waitingForPlayers")}
                 </p>
               </div>
             )}
@@ -566,15 +590,17 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             {/* Balance row */}
             <div className="flex items-center justify-center gap-2 mt-1">
               <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
-                BALANCE:
+                {t("common.balanceLabel")}
               </span>
-              <img
-                src="/images/gameon_chip.png"
-                alt="coin"
-                className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-              />
+              {showChipIcon && (
+                <img
+                  src="/images/gameon_chip.png"
+                  alt="coin"
+                  className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                />
+              )}
               <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
-                {walletBalance?.toFixed(2) ?? "0.00"}
+                <Money amount={walletBalance ?? 0} />
               </span>
             </div>
           </div>
@@ -641,8 +667,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                     className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
                   />
                   <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-xl">
-                    <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
-                    + 1
+                    {showChipIcon && (
+                      <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
+                    )}
+                    {quickBetLabel}
                   </span>
                 </button>
                 <button
@@ -655,7 +683,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                     className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
                   />
                   <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-xl">
-                    ADD
+                    {t("common.add")}
                   </span>
                 </button>
               </div>
@@ -706,7 +734,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             <span className="font-bungee text-sm tracking-widest"
               style={{ color: '#f0c040', textShadow: '0 2px 6px rgba(0,0,0,0.8)' }}
             >
-              🏆 PAST WINNERS
+              {t("common.pastWinnersTrophy")}
             </span>
           </div>
 
@@ -716,7 +744,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               <div className="flex flex-col items-center justify-center flex-1 gap-2 py-6">
                 <span className="text-3xl">🍌</span>
                 <p className="font-bungee text-xs text-center" style={{ color: '#6aaa30' }}>
-                  No winners yet.<br />Be the first!
+                  {t("common.noWinnersYet")}
                 </p>
               </div>
             ) : (
@@ -745,9 +773,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             {winner.playerName.toUpperCase()}
                           </span>
                           <div className="flex items-center gap-1">
-                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            {showChipIcon && (
+                              <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            )}
                             <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
-                              {winner.wonAmount.toFixed(2)}
+                              <Money amount={winner.wonAmount} />
                             </span>
                           </div>
                         </div>
@@ -786,17 +816,19 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         {/* Wallet Balance */}
         <div className="flex items-center justify-center gap-2 mb-6 mt-2">
           <div className="mt-[0px]">
-            <img
-              src="/images/gameon_chip.png"
-              alt="coin"
-              className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-            />
+            {showChipIcon && (
+              <img
+                src="/images/gameon_chip.png"
+                alt="coin"
+                className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+              />
+            )}
           </div>
           <span
             className="text-[30px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B] mt-[0px]"
             style={{ WebkitTextStroke: "2px #432311" }}
           >
-            {walletBalance?.toFixed(2) ?? "0.00"}
+            <Money amount={walletBalance ?? 0} />
           </span>
         </div>
 
@@ -835,8 +867,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
               />
               <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
-                <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
-                + 1
+                {showChipIcon && (
+                  <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
+                )}
+                {quickBetLabel}
               </span>
             </button>
             <button
@@ -849,7 +883,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
               />
               <span className="relative z-10 flex items-center justify-center h-full text-[#FFFFFF] font-bungee text-2xl">
-                ADD
+                {t("common.add")}
               </span>
             </button>
           </div>
@@ -865,16 +899,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20 translate-x-[40px]">
               <span className="font-bungee text-sm tracking-wide leading-none mb-1 mt-3 text-[#A35B1B]">
-                PRICE POOL
+                {t("common.pricePool")}
               </span>
               <div className="flex items-center justify-center gap-2">
-                <img
-                  src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
-                  alt="coin"
-                  className="w-8 h-8 md:w-7 md:h-7 object-contain"
-                />
+                {showChipIcon && (
+                  <img
+                    src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                    alt="coin"
+                    className="w-8 h-8 md:w-7 md:h-7 object-contain"
+                  />
+                )}
                 <span className="font-bungee text-3xl leading-none text-[#4E2A0B]">
-                  {animatedPot.toLocaleString("en-IN")}
+                  <Money amount={animatedPot} grouped />
                 </span>
               </div>
             </div>
@@ -895,7 +931,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
                         style={{ WebkitTextStroke: "3px #432311" }}
                       >
-                        ACTIVE PLAYERS
+                        {t("common.activePlayers")}
                       </span>
                     </div>
                     <div className="w-full relative justify-center mt-[20px] transition-all duration-500">
@@ -922,9 +958,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   {player.name.toUpperCase()}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                  <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  {showChipIcon && (
+                                    <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  )}
                                   <span className="text-[#FFD85A] font-bungee text-base">
-                                    {player.amount.toFixed(2)}
+                                    <Money amount={player.amount} />
                                   </span>
                                 </div>
                               </div>
@@ -984,12 +1022,12 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       className="font-bungee text-white text-2xl md:text-2xl drop-shadow-[2px_2px_0_#4E2A0B]"
                       style={{ WebkitTextStroke: "3px #432311" }}
                     >
-                      PAST WINNERS
+                      {t("common.pastWinners")}
                     </span>
                   </div>
                   {winners.length === 0 ? (
                     <div className="text-center text-white/60 py-4">
-                      No winners yet. Be the first!
+                      {t("common.noWinnersYet")}
                     </div>
                   ) : (
                     <>
@@ -1017,9 +1055,11 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                     {winner.playerName.toUpperCase()}
                                   </span>
                                   <div className="flex items-center gap-1">
+                                    {showChipIcon && (
                                     <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  )}
                                     <span className="text-[#FFD85A] font-bungee text-base">
-                                      {winner.wonAmount.toFixed(2)}
+                                      <Money amount={winner.wonAmount} />
                                     </span>
                                   </div>
                                 </div>

@@ -22,6 +22,25 @@ export const sessionTokenPromise: Promise<string> = new Promise((resolve) => {
   resolveSessionToken = resolve;
 });
 
+/**
+ * The language the platform last told us to use, remembered separately from
+ * the language actually in effect (see i18n/index.tsx's own storage key).
+ *
+ * Keeping the two apart is what lets the in-game settings menu mean anything: if
+ * we adopted the platform's value on every launch it would silently undo the
+ * player's own choice each time they reopened the game. Instead we adopt it only
+ * when the platform's value *changes* — i.e. the player changed their language
+ * on gameonworld — and otherwise leave their in-game override alone.
+ */
+const PLATFORM_LANG_KEY = "monkeybanana_platform_lang";
+
+let resolvePlatformLanguage: (lang: string | null) => void;
+/** Resolves with a language code when the platform asks for a NEW one, or null
+ *  when it repeats what it sent last time. Never resolves for guests. */
+export const platformLanguagePromise: Promise<string | null> = new Promise((resolve) => {
+  resolvePlatformLanguage = resolve;
+});
+
 /** True only when the platform injected BOTH a player id and a gameSessionUuid. */
 export function hasPlatformSession(): boolean {
   if (typeof window === "undefined") return false;
@@ -58,6 +77,20 @@ if (typeof window !== "undefined" && hasPlatformSession()) {
 
     const data = e.data;
     if (!data || data.type !== "GAMEON_LAUNCH_TICKET") return;
+
+    // Handled before the ticket check so a message carrying only a language
+    // still applies.
+    if (typeof data.language === "string") {
+      let previous: string | null = null;
+      try {
+        previous = localStorage.getItem(PLATFORM_LANG_KEY);
+        localStorage.setItem(PLATFORM_LANG_KEY, data.language);
+      } catch {
+        /* storage blocked in a partitioned iframe — treat as first launch */
+      }
+      resolvePlatformLanguage(data.language === previous ? null : data.language);
+    }
+
     if (typeof data.ticket !== "string") return;
 
     exchangeLaunchTicket(data.ticket)

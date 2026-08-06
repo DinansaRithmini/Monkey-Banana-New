@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useT } from "../../../../i18n";
 
 interface LosePageProps {
   amount: number;
@@ -11,6 +12,7 @@ interface LosePageProps {
 
 const LosePage: React.FC<LosePageProps> = ({ amount, show, onClose }) => {
   const router = useRouter();
+  const t = useT();
 
   if (!show) return null;
 
@@ -58,7 +60,7 @@ const LosePage: React.FC<LosePageProps> = ({ amount, show, onClose }) => {
               paintOrder: "stroke fill", // clean border behind fill
             }}
           >
-            YOU
+            {t("lose.you")}
           </span>{" "}
           <span
             style={{
@@ -68,7 +70,7 @@ const LosePage: React.FC<LosePageProps> = ({ amount, show, onClose }) => {
               paintOrder: "stroke fill",
             }}
           >
-            LOSE
+            {t("lose.lose")}
           </span>
         </h2>
       </div>

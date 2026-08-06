@@ -1,5 +1,8 @@
 "use client";
 import React from "react";
+import { useT } from "../../../../i18n";
+import { Money } from "../../../../currency/Money";
+import { useCurrency } from "../../../../currency";
 
 interface JackpotPopupProps {
   show: boolean;
@@ -8,6 +11,8 @@ interface JackpotPopupProps {
 }
 
 const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) => {
+  const t = useT();
+  const { currency } = useCurrency();
   if (!show) return null;
 
   return (
@@ -64,16 +69,18 @@ const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) =>
               WebkitTextFillColor: "#FFDD00",
             }}
           >
-            JACKPOT
+            {t("jackpot.title")}
           </h2>
 
           {/* 💰 Jackpot Amount with Coin Icon */}
           <div className="flex items-center justify-center gap-3 mt-2 relative z-20">
-             <img
-              src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
-              alt="Coin Icon"
-              className="w-[45px] h-[45px] object-contain"
-            />
+            {currency !== "lkr" && (
+              <img
+                src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                alt="Coin Icon"
+                className="w-[45px] h-[45px] object-contain"
+              />
+            )}
             <p
               className="font-bungee text-4xl"
               style={{
@@ -82,7 +89,7 @@ const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) =>
                 letterSpacing: "-2px",
               }}
             >
-              {amount}
+              <Money amount={amount} />
             </p>
            
             <p
