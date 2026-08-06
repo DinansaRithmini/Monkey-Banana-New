@@ -67,8 +67,11 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
             autoplay
             className="w-[130px] h-[130px] -my-2 drop-shadow-[0_0_10px_#FFD85A]"
           />
-          {/* Title */}
-          <h2 className="text-[#A96229] text-lg px-2 font-bungee leading-tight mb-4 mt-[10px]">
+          {/* Title — Sinhala and Tamil run much longer than the English string
+              and spill out of the 420px card on phones, so they step down a
+              size below `lg`. Bungee carries no Sinhala glyphs either, and the
+              fallback face needs looser leading to keep its diacritics intact. */}
+          <h2 className="text-[#A96229] text-sm lg:text-lg px-3 lg:px-2 font-bungee leading-snug lg:leading-tight mb-4 mt-[10px]">
             {t("bet.confirmTitle")}
           </h2>
 
@@ -92,7 +95,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
               </span>
             </div>
             {/* Additional Text after Amount */}
-            <p className="text-[#5E5E5E] font-medium text-[11px] leading-tight text-center px-10 mt-7">
+            <p className="text-[#5E5E5E] font-medium text-[9px] lg:text-[11px] leading-snug lg:leading-tight text-center px-5 lg:px-10 mt-7">
               {t("bet.confirmBody2")}
             </p>
           </div>

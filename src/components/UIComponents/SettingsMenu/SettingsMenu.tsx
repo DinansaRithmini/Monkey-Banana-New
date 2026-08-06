@@ -56,7 +56,10 @@ export function SettingsMenu() {
   };
 
   return (
-    <div className="fixed top-2 right-4 z-50" ref={rootRef}>
+    // Below `lg` the platform overlays its own 36px fullscreen button in this
+    // same top-right corner and lands on top of ours, so we drop underneath it.
+    // From `lg` up there is room for both side by side — left untouched.
+    <div className="fixed top-14 right-4 z-50 lg:top-2" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
