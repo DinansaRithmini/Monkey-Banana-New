@@ -56,7 +56,7 @@ export function SettingsMenu() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50" ref={rootRef}>
+    <div className="fixed top-2 right-4 z-50" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -65,7 +65,7 @@ export function SettingsMenu() {
         // Matches the platform's own overlay buttons (e.g. its fullscreen
         // control) so this one reads as a sibling of theirs rather than a
         // game-skinned intruder.
-        className="w-9 rounded-xl flex flex-col items-center justify-center gap-0.5 py-1.5 cursor-pointer transition-all duration-200 bg-white/80 backdrop-blur-md border border-slate-200/60 text-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:bg-white hover:text-slate-900 hover:scale-110 hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:border-slate-700/60 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+        className="w-9 rounded-xl flex flex-col items-center justify-center gap-0.5 py-1.5 cursor-pointer transition-all duration-200 bg-white/80 backdrop-blur-md border border-slate-200/60 text-slate-600 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:bg-white hover:text-slate-900 hover:scale-110 hover:shadow-[0_4px_14px_rgba(0,0,0,0.12)]"
         aria-label="Settings"
       >
         <svg
@@ -93,42 +93,52 @@ export function SettingsMenu() {
           className="absolute right-0 top-10 w-52 bg-[#FFF5C3] border-2 border-[#4E2A0B] rounded-xl shadow-2xl p-2 text-[#4E2A0B]"
         >
           <div className="text-xs font-bold uppercase tracking-wide px-2 pt-1 pb-1 opacity-70">Language</div>
-          {LANGS.map((l) => (
-            <button
-              key={l.code}
-              type="button"
-              role="menuitemradio"
-              aria-checked={l.code === lang}
-              onClick={() => chooseLang(l.code)}
-              lang={l.code}
-              className={`w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg text-sm hover:bg-[#F7A531]/30 ${
-                l.code === lang ? "bg-[#F7A531]/40 font-bold" : ""
-              }`}
-            >
-              <span className="w-4 shrink-0">{l.code === lang ? "✓" : ""}</span>
-              {l.label}
-            </button>
-          ))}
+          <div className="flex flex-col gap-1">
+            {LANGS.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                role="menuitemradio"
+                aria-checked={l.code === lang}
+                onClick={() => chooseLang(l.code)}
+                lang={l.code}
+                className={`w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg text-sm hover:bg-[#F7A531]/30 ${
+                  l.code === lang ? "bg-[#F7A531]/40 font-bold" : ""
+                }`}
+              >
+                <span className="w-4 shrink-0">{l.code === lang ? "✓" : ""}</span>
+                {l.label}
+              </button>
+            ))}
+          </div>
 
           <div className="h-px bg-[#4E2A0B]/20 my-1.5" role="separator" />
 
           <div className="text-xs font-bold uppercase tracking-wide px-2 pt-1 pb-1 opacity-70">Currency</div>
-          {CURRENCIES.map((c) => (
-            <button
-              key={c.code}
-              type="button"
-              role="menuitemradio"
-              aria-checked={c.code === currency}
-              onClick={() => chooseCurrency(c.code)}
-              className={`w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg text-sm hover:bg-[#F7A531]/30 ${
-                c.code === currency ? "bg-[#F7A531]/40 font-bold" : ""
-              }`}
-            >
-              <span className="w-4 shrink-0">{c.code === currency ? "✓" : ""}</span>
-              {c.code.toUpperCase()}
-              <span className="ml-auto opacity-70">{c.short}</span>
-            </button>
-          ))}
+          <div className="flex flex-col gap-1">
+            {CURRENCIES.map((c) => (
+              <button
+                key={c.code}
+                type="button"
+                role="menuitemradio"
+                aria-checked={c.code === currency}
+                onClick={() => chooseCurrency(c.code)}
+                className={`w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg text-sm hover:bg-[#F7A531]/30 ${
+                  c.code === currency ? "bg-[#F7A531]/40 font-bold" : ""
+                }`}
+              >
+                <span className="w-4 shrink-0">{c.code === currency ? "✓" : ""}</span>
+                {c.label}
+                <span className="ml-auto opacity-70">
+                  {c.code === "usd" ? (
+                    <img src="/images/gameon_chip.png" alt="chip" className="w-4 h-4 object-contain" />
+                  ) : (
+                    c.short
+                  )}
+                </span>
+              </button>
+            ))}
+          </div>
 
           <div className="h-px bg-[#4E2A0B]/20 my-1.5" role="separator" />
 

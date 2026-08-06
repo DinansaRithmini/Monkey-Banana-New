@@ -4,6 +4,7 @@ import SlotMachineReel from "./subcomponents/SlotMachineReel";
 import type { GameState, Winner } from "../../../lib/types";
 import { useT } from "../../../../i18n";
 import { Money } from "../../../../currency/Money";
+import { useCurrency } from "../../../../currency";
 // --- Count-up animation hook ---
 function useCountUp(targetValue: number, duration = 800) {
   const [current, setCurrent] = useState(0);
@@ -65,6 +66,18 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
   isGuest,
 }) => {
   const t = useT();
+  // The coin icon stands in for the "Gameon Chips" unit — an LKR amount
+  // already carries its own "Rs" prefix from <Money>, so the icon is
+  // redundant (and wrong-looking) once the player has switched to rupees.
+  const { currency, rate } = useCurrency();
+  const showChipIcon = currency !== "lkr";
+  // The quick-bet button always adds exactly 1 USD (see onQuickBet(1) below) —
+  // in LKR mode the label must show that same amount converted at the live
+  // rate, not the literal "1".
+  const quickBetLabel =
+    currency === "lkr"
+      ? `+ ${Math.round(rate).toLocaleString("en-US")}`
+      : t("common.quickBetPlusOne");
 
   // Select current player (winner or fallback)
   const currentPlayer =
@@ -271,11 +284,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
             {t("common.pricePool")}
           </span>
           <div className="flex items-center justify-center gap-2">
-            <img
-              src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
-              alt="coin"
-              className="w-6 h-6 object-contain"
-            />
+            {showChipIcon && (
+              <img
+                src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                alt="coin"
+                className="w-6 h-6 object-contain"
+              />
+            )}
             <span className="font-bungee text-2xl leading-none text-[#4E2A0B]">
               <Money amount={animatedPot} grouped />
             </span>
@@ -336,7 +351,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                       {player.name.toUpperCase()}
                     </span>
                     <div className="flex items-center gap-1">
-                      <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      {showChipIcon && (
+                        <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      )}
                       <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
                         <Money amount={player.amount} />
                       </span>
@@ -418,7 +435,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                         {winner.playerName.toUpperCase()}
                       </span>
                       <div className="flex items-center gap-1">
+                        {showChipIcon && (
                         <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain flex-shrink-0" />
+                      )}
                         <span className={`text-[#FFD85A] font-bungee ${compact ? "text-sm" : "text-base"}`}>
                           <Money amount={winner.wonAmount} />
                         </span>
@@ -507,7 +526,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             {player.name.toUpperCase()}
                           </span>
                           <div className="flex items-center gap-1">
-                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            {showChipIcon && (
+                              <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            )}
                             <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
                               <Money amount={player.amount} />
                             </span>
@@ -571,11 +592,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
               <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
                 {t("common.balanceLabel")}
               </span>
-              <img
-                src="/images/gameon_chip.png"
-                alt="coin"
-                className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-              />
+              {showChipIcon && (
+                <img
+                  src="/images/gameon_chip.png"
+                  alt="coin"
+                  className="w-5 h-5 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+                />
+              )}
               <span className="text-[18px] font-bungee text-[#4E2A0B] leading-none drop-shadow-[2px_2px_0_#fff]">
                 <Money amount={walletBalance ?? 0} />
               </span>
@@ -644,8 +667,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                     className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
                   />
                   <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-xl">
-                    <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
-                    {t("common.quickBetPlusOne")}
+                    {showChipIcon && (
+                      <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 object-contain" />
+                    )}
+                    {quickBetLabel}
                   </span>
                 </button>
                 <button
@@ -748,7 +773,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                             {winner.playerName.toUpperCase()}
                           </span>
                           <div className="flex items-center gap-1">
-                            <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            {showChipIcon && (
+                              <img src="/images/gameon_chip.png" alt="coin" className="w-3.5 h-3.5 object-contain flex-shrink-0" />
+                            )}
                             <span className="font-bungee text-xs" style={{ color: '#f0c040' }}>
                               <Money amount={winner.wonAmount} />
                             </span>
@@ -789,11 +816,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
         {/* Wallet Balance */}
         <div className="flex items-center justify-center gap-2 mb-6 mt-2">
           <div className="mt-[0px]">
-            <img
-              src="/images/gameon_chip.png"
-              alt="coin"
-              className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
-            />
+            {showChipIcon && (
+              <img
+                src="/images/gameon_chip.png"
+                alt="coin"
+                className="w-8 h-8 md:w-9 md:h-9 object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]"
+              />
+            )}
           </div>
           <span
             className="text-[30px] font-bungee text-white leading-none drop-shadow-[4px_4px_0_#4E2A0B] mt-[0px]"
@@ -838,8 +867,10 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
               />
               <span className="relative z-10 flex items-center justify-center gap-1 h-full text-[#FFFFFF] font-bungee text-2xl">
-                <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
-                {t("common.quickBetPlusOne")}
+                {showChipIcon && (
+                  <img src="/images/gameon_chip.png" alt="coin" className="w-5 h-5 md:w-6 md:h-6 object-contain" />
+                )}
+                {quickBetLabel}
               </span>
             </button>
             <button
@@ -871,11 +902,13 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                 {t("common.pricePool")}
               </span>
               <div className="flex items-center justify-center gap-2">
-                <img
-                  src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
-                  alt="coin"
-                  className="w-8 h-8 md:w-7 md:h-7 object-contain"
-                />
+                {showChipIcon && (
+                  <img
+                    src="https://storage.googleapis.com/image-bucket-new/Gameon/brown_goken.png"
+                    alt="coin"
+                    className="w-8 h-8 md:w-7 md:h-7 object-contain"
+                  />
+                )}
                 <span className="font-bungee text-3xl leading-none text-[#4E2A0B]">
                   <Money amount={animatedPot} grouped />
                 </span>
@@ -925,7 +958,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                   {player.name.toUpperCase()}
                                 </span>
                                 <div className="flex items-center gap-1">
-                                  <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  {showChipIcon && (
+                                    <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  )}
                                   <span className="text-[#FFD85A] font-bungee text-base">
                                     <Money amount={player.amount} />
                                   </span>
@@ -1020,7 +1055,9 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
                                     {winner.playerName.toUpperCase()}
                                   </span>
                                   <div className="flex items-center gap-1">
+                                    {showChipIcon && (
                                     <img src="/images/gameon_chip.png" alt="coin" className="w-4 h-4 object-contain" />
+                                  )}
                                     <span className="text-[#FFD85A] font-bungee text-base">
                                       <Money amount={winner.wonAmount} />
                                     </span>

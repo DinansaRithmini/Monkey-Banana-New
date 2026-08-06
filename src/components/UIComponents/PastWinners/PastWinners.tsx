@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Trophy } from "lucide-react";
 import { useT } from "../../../i18n";
 import { Money } from "../../../currency/Money";
-import { useMoney } from "../../../currency";
+import { useMoney, useCurrency } from "../../../currency";
 
 // Type definitions
 interface Winner {
@@ -28,6 +28,7 @@ interface PastWinnersProps {
 export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
   const t = useT();
   const fmt = useMoney();
+  const { currency } = useCurrency();
   const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -156,11 +157,13 @@ export default function PastWinners({ refreshTrigger = 0 }: PastWinnersProps) {
                 <div className="text-right">
                   <p className="text-[#4E2A0B] font-bold text-sm flex items-center justify-end">
                     {t("common.won")}
-                    <img
-                      src={coinImgPath}
-                      alt="coin"
-                      className="w-5 h-5 mx-1 inline-block"
-                    />
+                    {currency !== "lkr" && (
+                      <img
+                        src={coinImgPath}
+                        alt="coin"
+                        className="w-5 h-5 mx-1 inline-block"
+                      />
+                    )}
                     <Money amount={winner.wonAmount} grouped />
                   </p>
                 </div>

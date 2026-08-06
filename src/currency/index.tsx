@@ -19,8 +19,8 @@ import { FALLBACK_LKR_PER_USD, fetchLkrPerUsd, readCachedRate } from "./rate";
  * place a USD figure becomes rupees. See Money.tsx.
  */
 export const CURRENCIES = [
-  { code: "usd", short: "$" },
-  { code: "lkr", short: "Rs" },
+  { code: "usd", short: "$", label: "Gameon Chips" },
+  { code: "lkr", short: "Rs", label: "LKR" },
 ] as const;
 
 export type Currency = (typeof CURRENCIES)[number]["code"];

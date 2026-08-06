@@ -2,6 +2,7 @@
 import React from "react";
 import { useT } from "../../../../i18n";
 import { Money } from "../../../../currency/Money";
+import { useCurrency } from "../../../../currency";
 
 interface BetConfirmationPopupProps {
   show: boolean;
@@ -19,6 +20,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
   isPlacing,
 }) => {
   const t = useT();
+  const { currency } = useCurrency();
   return (
     <div
       className={`fixed inset-0 flex items-center justify-center transition-opacity duration-300 ${
@@ -45,7 +47,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
             className="w-[80px] h-[80px] my-2 animate-pulse drop-shadow-[0_0_10px_#FFD85A]"
           />
           {/* Title */}
-          <h2 className="text-[#A96229] text-2xl font-bungee leading-tight mb-4 mt-[10px]">
+          <h2 className="text-[#A96229] text-lg px-2 font-bungee leading-tight mb-4 mt-[10px]">
             {t("bet.confirmTitle")}
           </h2>
 
@@ -57,17 +59,19 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
 
             {/* Amount with Gameon Chip */}
             <div className="flex items-center justify-center space-x-2">
-              <img
-                src="/images/gameon_chip.png"
-                alt="Gameon Chip"
-                className="w-[40px] h-[40px]"
-              />
+              {currency !== "lkr" && (
+                <img
+                  src="/images/gameon_chip.png"
+                  alt="Gameon Chip"
+                  className="w-[40px] h-[40px]"
+                />
+              )}
               <span className="font-bungee text-[#A96229] font-bold text-3xl">
                 <Money amount={amount} />
               </span>
             </div>
             {/* Additional Text after Amount */}
-            <p className="text-[#5E5E5E] font-medium text-sm mt-7">
+            <p className="text-[#5E5E5E] font-medium text-[11px] leading-tight text-center px-10 mt-7">
               {t("bet.confirmBody2")}
             </p>
           </div>
