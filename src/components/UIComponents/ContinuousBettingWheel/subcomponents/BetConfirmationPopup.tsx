@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useT } from "../../../../i18n";
+import { Money } from "../../../../currency/Money";
 
 interface BetConfirmationPopupProps {
   show: boolean;
@@ -16,6 +18,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
   onCancel,
   isPlacing,
 }) => {
+  const t = useT();
   return (
     <div
       className={`fixed inset-0 flex items-center justify-center transition-opacity duration-300 ${
@@ -43,15 +46,13 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
           />
           {/* Title */}
           <h2 className="text-[#A96229] text-2xl font-bungee leading-tight mb-4 mt-[10px]">
-            CONFIRM
-            <br />
-            YOUR WAGER
+            {t("bet.confirmTitle")}
           </h2>
 
           {/* Description */}
           <div className="text-center mt-[20px]">
             <p className="text-[#5E5E5E] font-medium text-sm mb-3">
-              Are you sure you want to place
+              {t("bet.confirmBody1")}
             </p>
 
             {/* Amount with Gameon Chip */}
@@ -62,13 +63,12 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
                 className="w-[40px] h-[40px]"
               />
               <span className="font-bungee text-[#A96229] font-bold text-3xl">
-                {amount}
+                <Money amount={amount} />
               </span>
             </div>
             {/* Additional Text after Amount */}
             <p className="text-[#5E5E5E] font-medium text-sm mt-7">
-              This amount will be deducted from
-              <br></br>your wallet balance.
+              {t("bet.confirmBody2")}
             </p>
           </div>
 
@@ -86,7 +86,7 @@ const BetConfirmationPopup: React.FC<BetConfirmationPopupProps> = ({
                 className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
               />
               <span className="relative z-10 flex items-center justify-center h-full text-white font-bungee text-lg">
-                {isPlacing ? "PLACING..." : "CONFIRM"}
+                {isPlacing ? t("common.placing") : t("common.confirm")}
               </span>
             </button>
           </div>

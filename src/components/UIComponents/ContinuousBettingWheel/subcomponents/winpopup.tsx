@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useT } from "../../../../i18n";
 
 interface WinPopupProps {
   show: boolean;
@@ -8,6 +9,7 @@ interface WinPopupProps {
 }
 
 const WinPopup: React.FC<WinPopupProps> = ({ show, amount, onClose }) => {
+  const t = useT();
   if (!show) return null;
 
   return (
@@ -54,7 +56,7 @@ const WinPopup: React.FC<WinPopupProps> = ({ show, amount, onClose }) => {
               WebkitTextFillColor: "#FFDD00",
             }}
           >
-            YOU WIN
+            {t("win.title")}
           </h2>
         </div>
       </div>

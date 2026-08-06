@@ -1,5 +1,7 @@
 "use client";
 import React from "react";
+import { useT } from "../../../../i18n";
+import { Money } from "../../../../currency/Money";
 
 interface JackpotPopupProps {
   show: boolean;
@@ -8,6 +10,7 @@ interface JackpotPopupProps {
 }
 
 const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) => {
+  const t = useT();
   if (!show) return null;
 
   return (
@@ -64,7 +67,7 @@ const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) =>
               WebkitTextFillColor: "#FFDD00",
             }}
           >
-            JACKPOT
+            {t("jackpot.title")}
           </h2>
 
           {/* 💰 Jackpot Amount with Coin Icon */}
@@ -82,7 +85,7 @@ const JackpotPopup: React.FC<JackpotPopupProps> = ({ show, amount, onClose }) =>
                 letterSpacing: "-2px",
               }}
             >
-              {amount}
+              <Money amount={amount} />
             </p>
            
             <p
