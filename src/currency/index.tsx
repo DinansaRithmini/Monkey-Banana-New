@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { platformLanguagePromise } from "../utils/session";
+import { onPlatformPrefs } from "../utils/session";
 import { FALLBACK_LKR_PER_USD, fetchLkrPerUsd, readCachedRate } from "./rate";
 
 /**
@@ -20,7 +20,7 @@ import { FALLBACK_LKR_PER_USD, fetchLkrPerUsd, readCachedRate } from "./rate";
  */
 export const CURRENCIES = [
   { code: "usd", short: "$", label: "Gameon Chips" },
-  { code: "lkr", short: "Rs", label: "LKR" },
+  { code: "lkr", short: "LKR", label: "Sri Lankan Rupee" },
 ] as const;
 
 export type Currency = (typeof CURRENCIES)[number]["code"];
@@ -29,9 +29,17 @@ const STORAGE_KEY = "monkeybanana_currency";
 
 const isCurrency = (v: unknown): v is Currency => CURRENCIES.some((c) => c.code === v);
 
-/** Which currency a player launching in a given language should start on.
- *  Sinhala implies a Sri Lankan player, so rupees; English and Tamil default to
- *  the platform's own unit. Either way the settings menu can override it. */
+/**
+ * Which display unit a platform currency code maps onto. The platform talks in
+ * real-world currencies; `lkr` renders in rupees and anything else (`usd`
+ * included) renders in the platform's own unit — GameOn chips, where 1 chip =
+ * 1 USD, which is what every amount on the wire is already denominated in.
+ */
+export const currencyForPlatform = (code: string): Currency =>
+  code.toLowerCase() === "lkr" ? "lkr" : "usd";
+
+/** Fallback for a platform old enough to send only a language: Sinhala implies a
+ *  Sri Lankan player, so rupees. Used only when no `currency` came with it. */
 export const currencyForLanguage = (lang: string): Currency => (lang === "si" ? "lkr" : "usd");
 
 /** An explicit `?currency=` beats the platform's launch-ticket language, so a
@@ -103,17 +111,18 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // The platform's launch ticket carries the player's account language, which
-  // also picks their starting currency (si → LKR). Resolves only when that
-  // language is new to us — see utils/session.ts.
+  // The platform's launch ticket carries the account's currency, and that wins
+  // on every launch — a player who switched units in the settings menu is back
+  // on the platform's own currency the next time they open the game. A platform
+  // that sent only a language falls back to inferring the unit from it.
   //
-  // Goes through `setCurrency`, not the raw state setter, so the choice is
-  // persisted: the next launch repeats the same language, which resolves null,
-  // and without a stored value the player would silently drop back to usd.
+  // Goes through `setCurrency`, not the raw state setter, so the unit is already
+  // right on the first paint of the *next* launch, before the message lands.
   useEffect(() => {
     if (hasCurrencyParam()) return;
-    platformLanguagePromise.then((l) => {
-      if (l) setCurrency(currencyForLanguage(l));
+    return onPlatformPrefs(({ language, currency }) => {
+      if (currency) setCurrency(currencyForPlatform(currency));
+      else if (language) setCurrency(currencyForLanguage(language));
     });
   }, [setCurrency]);
 
@@ -122,7 +131,7 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       if (currency === "lkr") {
         // Whole rupees — at ~332 LKR/USD, cents are noise.
         const n = Math.round(amount * rate).toLocaleString("en-US");
-        return opts?.unitless ? n : `Rs ${n}`;
+        return opts?.unitless ? n : `LKR ${n}`;
       }
       // No prefix — every USD call site already renders its own coin icon
       // next to this number, same as the original hardcoded `.toFixed(2)`.

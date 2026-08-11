@@ -22,24 +22,34 @@ export const sessionTokenPromise: Promise<string> = new Promise((resolve) => {
   resolveSessionToken = resolve;
 });
 
-/**
- * The language the platform last told us to use, remembered separately from
- * the language actually in effect (see i18n/index.tsx's own storage key).
- *
- * Keeping the two apart is what lets the in-game settings menu mean anything: if
- * we adopted the platform's value on every launch it would silently undo the
- * player's own choice each time they reopened the game. Instead we adopt it only
- * when the platform's value *changes* — i.e. the player changed their language
- * on gameonworld — and otherwise leave their in-game override alone.
- */
-const PLATFORM_LANG_KEY = "monkeybanana_platform_lang";
+/** The language and currency the platform wants this launch rendered in, exactly
+ *  as they arrived (lowercased); either is null when the message omitted it. */
+export interface PlatformPrefs {
+  language: string | null;
+  currency: string | null;
+}
 
-let resolvePlatformLanguage: (lang: string | null) => void;
-/** Resolves with a language code when the platform asks for a NEW one, or null
- *  when it repeats what it sent last time. Never resolves for guests. */
-export const platformLanguagePromise: Promise<string | null> = new Promise((resolve) => {
-  resolvePlatformLanguage = resolve;
-});
+let latestPrefs: PlatformPrefs | null = null;
+const prefsListeners = new Set<(p: PlatformPrefs) => void>();
+
+/**
+ * Subscribes to the platform's launch preferences. Fires immediately if a launch
+ * message already arrived (the listener below is attached at module load, so it
+ * usually has), and again for every later message.
+ *
+ * The platform is the authority on every launch: whatever it sends wins over the
+ * player's in-game settings-menu choice, so leaving the game and coming back
+ * always restores the account's own language and currency. A callback rather
+ * than a promise because the platform may post more than once per launch, and
+ * the last word has to be the one that sticks.
+ */
+export function onPlatformPrefs(cb: (p: PlatformPrefs) => void): () => void {
+  prefsListeners.add(cb);
+  if (latestPrefs) cb(latestPrefs);
+  return () => {
+    prefsListeners.delete(cb);
+  };
+}
 
 /** True only when the platform injected BOTH a player id and a gameSessionUuid. */
 export function hasPlatformSession(): boolean {
@@ -78,17 +88,13 @@ if (typeof window !== "undefined" && hasPlatformSession()) {
     const data = e.data;
     if (!data || data.type !== "GAMEON_LAUNCH_TICKET") return;
 
-    // Handled before the ticket check so a message carrying only a language
-    // still applies.
-    if (typeof data.language === "string") {
-      let previous: string | null = null;
-      try {
-        previous = localStorage.getItem(PLATFORM_LANG_KEY);
-        localStorage.setItem(PLATFORM_LANG_KEY, data.language);
-      } catch {
-        /* storage blocked in a partitioned iframe — treat as first launch */
-      }
-      resolvePlatformLanguage(data.language === previous ? null : data.language);
+    // Handled before the ticket check so a message carrying only a language or
+    // currency still applies.
+    const language = typeof data.language === "string" ? data.language.toLowerCase() : null;
+    const currency = typeof data.currency === "string" ? data.currency.toLowerCase() : null;
+    if (language || currency) {
+      latestPrefs = { language, currency };
+      for (const cb of prefsListeners) cb(latestPrefs);
     }
 
     if (typeof data.ticket !== "string") return;

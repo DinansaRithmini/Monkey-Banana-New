@@ -9,7 +9,7 @@ interface MoneyProps {
   amount: number;
   /** Thousands separators and 0–2 decimals instead of a fixed 2 (pot/balance sites). */
   grouped?: boolean;
-  /** Drop the "Rs" prefix because the surrounding context already states the
+  /** Drop the "LKR" prefix because the surrounding context already states the
    *  unit, or a coin icon next to this component already does. */
   unitless?: boolean;
   className?: string;

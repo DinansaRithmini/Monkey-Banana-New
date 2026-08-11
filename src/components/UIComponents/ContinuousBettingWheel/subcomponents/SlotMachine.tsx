@@ -67,7 +67,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({
 }) => {
   const t = useT();
   // The coin icon stands in for the "Gameon Chips" unit — an LKR amount
-  // already carries its own "Rs" prefix from <Money>, so the icon is
+  // already carries its own "LKR" prefix from <Money>, so the icon is
   // redundant (and wrong-looking) once the player has switched to rupees.
   const { currency, rate } = useCurrency();
   const showChipIcon = currency !== "lkr";
