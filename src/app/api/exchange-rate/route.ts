@@ -15,13 +15,9 @@ import { NextResponse } from "next/server";
  * envelope is contained here rather than in src/currency/rate.ts.
  */
 export async function GET() {
-  const backendUrl = process.env.GAMEON_BACKEND_URL;
-  if (!backendUrl) {
-    return NextResponse.json(
-      { success: false, error: "GAMEON_BACKEND_URL is not configured" },
-      { status: 500 }
-    );
-  }
+  // Env first; the platform's older public host as an or-else, so a machine
+  // whose env file never made it still gets a live rate.
+  const backendUrl = process.env.GAMEON_BACKEND_URL || "https://backend-api.gameonworld.ai";
 
   try {
     const response = await fetch(
@@ -38,9 +34,11 @@ export async function GET() {
     }
 
     const body = await response.json();
-    // `rate` is the platform's own USD→LKR figure (buyingRate/sellingRate are
-    // the spread around it and must not be used to price the game).
-    const rate = body?.content?.rate;
+    // `rate` is the platform's own USD→LKR figure. The or-else host above is an
+    // older build that doesn't send it at all — only the buyingRate/sellingRate
+    // spread — so fall back to buyingRate there, which is what this game read
+    // before `rate` existed.
+    const rate = body?.content?.rate ?? body?.content?.buyingRate;
     // A zero, negative or missing rate would zero or explode every amount on
     // screen — refuse it here so the client keeps its last known good value.
     if (typeof rate !== "number" || !Number.isFinite(rate) || rate <= 0) {
