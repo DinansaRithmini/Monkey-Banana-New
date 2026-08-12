@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { platformLanguagePromise } from "../utils/session";
+import { onPlatformPrefs } from "../utils/session";
 import { en, type Dict, type Key } from "./en";
 import { si } from "./si";
 import { ta } from "./ta";
@@ -83,13 +83,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = lang;
   }, [lang]);
 
-  // The platform sends the player's account language on the launch ticket. It
-  // arrives asynchronously — and possibly before React mounted, which is why
-  // utils/session.ts listens at module load and hands it over as a promise.
+  // The platform sends the player's account language on the launch ticket, and
+  // it wins over an in-game override on every launch. It arrives asynchronously
+  // — and possibly before React mounted, which is why utils/session.ts listens
+  // at module load and replays what it caught to late subscribers.
   useEffect(() => {
     if (hasLangParam()) return;
-    platformLanguagePromise.then((l) => {
-      if (isLang(l)) setLang(l);
+    return onPlatformPrefs(({ language }) => {
+      if (isLang(language)) setLang(language);
     });
   }, [setLang]);
 
