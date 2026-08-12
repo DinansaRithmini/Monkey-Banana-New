@@ -8,21 +8,20 @@
  *      number on the first frame instead of flashing a stale one.
  *   3. one background fetch per mount, which refreshes both.
  *
- * Called directly rather than through the app's own /api routes — this
- * endpoint is public and sends `access-control-allow-origin: *`, so no proxy
- * is needed.
+ * Goes through our own /api/exchange-rate route, not the backend directly: the
+ * backend's CORS is an allowlist, so a browser call from an origin it doesn't
+ * know is blocked outright. The route also holds the backend host, which lives
+ * in the server-only `GAMEON_BACKEND_URL` env var — see that route for why.
  */
 
-const RATE_URL =
-  process.env.NEXT_PUBLIC_FX_RATE_URL ||
-  "https://backend-api.gameonworld.ai/api/open/v1/exchange-rate/latest?currency=USD";
+const RATE_URL = "/api/exchange-rate";
 
 /** Upstream moves this once a day (~10:00), so six hours is comfortable. */
 const TTL_MS = 6 * 60 * 60 * 1000;
 const STORAGE_KEY = "monkeybanana_fx_rate";
 
 /** Last known good value at the time of writing, for a cold start with no network. */
-export const FALLBACK_LKR_PER_USD = 332;
+export const FALLBACK_LKR_PER_USD = 350;
 
 interface Cached {
   rate: number;
@@ -66,7 +65,7 @@ export async function fetchLkrPerUsd(): Promise<number | null> {
     const r = await fetch(RATE_URL);
     if (!r.ok) return null;
     const body = await r.json();
-    const rate = body?.content?.buyingRate;
+    const rate = body?.rate;
     if (!isSaneRate(rate)) return null;
     writeCachedRate(rate);
     return rate;
