@@ -81,6 +81,23 @@ export async function exchangeLaunchTicket(launchTicket: string): Promise<string
   return body.sessionToken as string;
 }
 
+/**
+ * LOCAL DEV ONLY — resolves the session promise with a token pasted by hand.
+ *
+ * Outside the platform iframe no GAMEON_LAUNCH_TICKET ever arrives, so
+ * sessionTokenPromise hangs forever and every bet is blocked. This lets a token
+ * captured from a real launch stand in for the exchange. The token still has to
+ * be one the platform minted — the backend validates it exactly as in
+ * production — so this weakens nothing; it only skips the handshake.
+ *
+ * The NODE_ENV check is inlined at build time, so this is dead code in
+ * production. See src/components/DevSessionTokenPrompt.tsx.
+ */
+export function devSetSessionToken(token: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  resolveSessionToken(token);
+}
+
 if (typeof window !== "undefined" && hasPlatformSession()) {
   window.addEventListener("message", (e: MessageEvent) => {
     if (e.source !== window.parent) return;

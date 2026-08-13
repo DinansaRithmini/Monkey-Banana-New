@@ -883,6 +883,35 @@ app.post("/api/createUserGame", async (req, res) => {
     return res.status(400).json({ success: false, message: "Missing required field: sessionUuid" });
   }
 
+  // This endpoint is public — no signature, no origin check — so `sessionUuid`
+  // (the round number) is whatever the caller typed. Betting on a settled round
+  // used to succeed. The round is therefore looked up here and the caller's
+  // value is only ever compared against it, never used.
+  //
+  // Allowlist, not blocklist: we accept only the one round that is genuinely
+  // open. Rejecting "completed" rounds would still wave through a round number
+  // that does not exist yet, or one that is mid-spin.
+  const round = await ContinuousGame.findOne({
+    gameId: "continuous-betting-game",
+    roundStatus: "active",
+  }).sort({ roundNumber: -1 });
+
+  // timeLeft is the round's own persisted countdown, so it stays correct
+  // regardless of which TIMER_DURATION this process was started with. It is
+  // written once per engine tick, so it can lag a second behind — it errs open,
+  // never rejecting a bet that was actually in time.
+  if (!round || round.phase !== "betting" || round.timeLeft <= 0) {
+    return res.status(409).json({ status: false, message: "Betting is closed for this round" });
+  }
+
+  const claimedRound = Number(sessionUuid);
+  if (!Number.isInteger(claimedRound) || claimedRound !== round.roundNumber) {
+    return res.status(409).json({
+      status: false,
+      message: "This round has ended — refresh and try again",
+    });
+  }
+
   // Resolved up front so a forged token is rejected before any coins are held.
   let userUuid;
   try {
@@ -897,7 +926,10 @@ app.post("/api/createUserGame", async (req, res) => {
   console.log(`BET for platform-verified uuid ${userUuid} (amount ${amount})`);
 
   const payload = {
-    sessionUuid: sessionUuid.toString(),
+    // The server's round, not the caller's — equal by the check above, but this
+    // way no unvalidated value can reach the platform if that check is ever
+    // moved or loosened.
+    sessionUuid: round.roundNumber.toString(),
     sessionToken,
     gameSessionUuid,
     amount,
