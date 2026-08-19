@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useT } from "../../../../i18n";
 
 interface InsufficientPopupProps {
   show: boolean;
@@ -10,6 +11,7 @@ const InsufficientPopup: React.FC<InsufficientPopupProps> = ({
   show,
   onClose,
 }) => {
+  const t = useT();
   if (!show) return null;
 
   return (
@@ -29,16 +31,12 @@ const InsufficientPopup: React.FC<InsufficientPopupProps> = ({
         <div className="flex flex-col items-center justify-center h-full text-center">
           {/* Title */}
           <h2 className="text-[#A96229] text-2xl font-bungee leading-tight mb-2 mt-[80px]">
-            INSUFFICIENT
-            <br />
-            BALANCE
+            {t("insufficient.title")}
           </h2>
 
           {/* Description */}
           <p className="text-[#5E5E5E] font-medium text-sm px-8 mb-3 mt-[20px]">
-            Your Wallet doesn’t have <br />
-            enough coins to place <br />
-            this bet.
+            {t("insufficient.body")}
           </p>
 
           {/* Continue button */}
@@ -55,7 +53,7 @@ const InsufficientPopup: React.FC<InsufficientPopupProps> = ({
 
             {/* Button text */}
             <span className="relative z-10 flex items-center justify-center h-full text-white font-bungee text-lg">
-              CONTINUE
+              {t("common.continue")}
             </span>
           </button>
         </div>

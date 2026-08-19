@@ -22,6 +22,35 @@ export const sessionTokenPromise: Promise<string> = new Promise((resolve) => {
   resolveSessionToken = resolve;
 });
 
+/** The language and currency the platform wants this launch rendered in, exactly
+ *  as they arrived (lowercased); either is null when the message omitted it. */
+export interface PlatformPrefs {
+  language: string | null;
+  currency: string | null;
+}
+
+let latestPrefs: PlatformPrefs | null = null;
+const prefsListeners = new Set<(p: PlatformPrefs) => void>();
+
+/**
+ * Subscribes to the platform's launch preferences. Fires immediately if a launch
+ * message already arrived (the listener below is attached at module load, so it
+ * usually has), and again for every later message.
+ *
+ * The platform is the authority on every launch: whatever it sends wins over the
+ * player's in-game settings-menu choice, so leaving the game and coming back
+ * always restores the account's own language and currency. A callback rather
+ * than a promise because the platform may post more than once per launch, and
+ * the last word has to be the one that sticks.
+ */
+export function onPlatformPrefs(cb: (p: PlatformPrefs) => void): () => void {
+  prefsListeners.add(cb);
+  if (latestPrefs) cb(latestPrefs);
+  return () => {
+    prefsListeners.delete(cb);
+  };
+}
+
 /** True only when the platform injected BOTH a player id and a gameSessionUuid. */
 export function hasPlatformSession(): boolean {
   if (typeof window === "undefined") return false;
@@ -52,12 +81,39 @@ export async function exchangeLaunchTicket(launchTicket: string): Promise<string
   return body.sessionToken as string;
 }
 
+/**
+ * LOCAL DEV ONLY — resolves the session promise with a token pasted by hand.
+ *
+ * Outside the platform iframe no GAMEON_LAUNCH_TICKET ever arrives, so
+ * sessionTokenPromise hangs forever and every bet is blocked. This lets a token
+ * captured from a real launch stand in for the exchange. The token still has to
+ * be one the platform minted — the backend validates it exactly as in
+ * production — so this weakens nothing; it only skips the handshake.
+ *
+ * The NODE_ENV check is inlined at build time, so this is dead code in
+ * production. See src/components/DevSessionTokenPrompt.tsx.
+ */
+export function devSetSessionToken(token: string): void {
+  if (process.env.NODE_ENV === "production") return;
+  resolveSessionToken(token);
+}
+
 if (typeof window !== "undefined" && hasPlatformSession()) {
   window.addEventListener("message", (e: MessageEvent) => {
     if (e.source !== window.parent) return;
 
     const data = e.data;
     if (!data || data.type !== "GAMEON_LAUNCH_TICKET") return;
+
+    // Handled before the ticket check so a message carrying only a language or
+    // currency still applies.
+    const language = typeof data.language === "string" ? data.language.toLowerCase() : null;
+    const currency = typeof data.currency === "string" ? data.currency.toLowerCase() : null;
+    if (language || currency) {
+      latestPrefs = { language, currency };
+      for (const cb of prefsListeners) cb(latestPrefs);
+    }
+
     if (typeof data.ticket !== "string") return;
 
     exchangeLaunchTicket(data.ticket)

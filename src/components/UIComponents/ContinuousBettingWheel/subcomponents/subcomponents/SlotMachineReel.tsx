@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import { useT } from "../../../../../i18n";
 
 interface Player {
   id: string;
@@ -14,6 +15,7 @@ interface SlotMachineReelProps {
 }
 
 const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, winnerId }) => {
+  const t = useT();
   const [displayPlayers, setDisplayPlayers] = useState(players);
   const [spinSpeed, setSpinSpeed] = useState(150); // Mid-fast constant speed
   const spinIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -133,7 +135,7 @@ const SlotMachineReel: React.FC<SlotMachineReelProps> = ({ players, isSpinning, 
         // Show placeholder when no players
         <div className="text-center">
           <span className="font-bungee text-[#4E2A0B] text-sm opacity-50">
-            WAITING FOR PLAYERS...
+            {t("common.waitingForPlayersReel")}
           </span>
         </div>
       ) : (
