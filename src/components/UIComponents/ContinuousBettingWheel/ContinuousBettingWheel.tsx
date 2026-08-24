@@ -162,7 +162,12 @@ const ContinuousBettingWheel: React.FC = () => {
         return;
       }
 
-      const result = await joinGame((playerName ?? "").trim(), pendingBet);
+      // The exact key this bet's coins were held under — carried to
+      // /api/continuous-game/join so settlement can release this specific
+      // hold later, not just the player's round-wide total.
+      const holdKey = releaseResponse.data?.holdKey;
+
+      const result = await joinGame((playerName ?? "").trim(), pendingBet, holdKey);
       if (result.success) {
         setHasJoined(true);
         // Refresh wallet balance after successful bet

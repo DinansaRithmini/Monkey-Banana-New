@@ -291,7 +291,7 @@ export function useContinuousGame() {
   }, [])
 
   const joinGame = useCallback(
-    async (name: string, amount: number) => {
+    async (name: string, amount: number, holdKey?: string) => {
       // The seat on the wheel decides who collects the pot, so it is claimed
       // with the session token — never with a client-supplied user id.
       if (!sessionToken) {
@@ -306,6 +306,11 @@ export function useContinuousGame() {
             name,
             amount,
             sessionToken,
+            // The exact GameOn hold this bet was placed under (from
+            // /api/createUserGame) — recorded against the player so
+            // settlement can release this specific hold, not just their
+            // round-wide total. See server-game-manager.ts's addPlayer.
+            holdKey,
             profileImage: avatarImagePath || "https://safa.sgp1.digitaloceanspaces.com/safa./avatar_images/Ravex_M.png",
           }),
         })
