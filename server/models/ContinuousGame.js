@@ -1,5 +1,16 @@
 const mongoose = require("mongoose")
 
+// One GameOn wallet hold — see server/utils/holdKey.js. A player accumulates
+// one of these per bet/top-up; `amount` here is that single hold's stake, not
+// the player's running total (that's still Player.amount).
+const HoldSchema = new mongoose.Schema(
+  {
+    key: { type: String, required: true },
+    amount: { type: Number, required: true },
+  },
+  { _id: false }
+)
+
 const ContinuousGamePlayerSchema = new mongoose.Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
@@ -7,7 +18,8 @@ const ContinuousGamePlayerSchema = new mongoose.Schema({
   color: { type: String, required: true },
   joinedAt: { type: Date, default: Date.now },
   profileImage: { type: String, required: true },
-  isBot: { type: Boolean, default: false }
+  isBot: { type: Boolean, default: false },
+  holds: { type: [HoldSchema], default: [] }
 })
 
 const ContinuousGameSchema = new mongoose.Schema({
@@ -30,6 +42,7 @@ const ContinuousGameSchema = new mongoose.Schema({
     color: String,
     profileImage: String,
     isBot: Boolean,
+    holds: { type: [HoldSchema], default: [] },
   },
   rotation: { type: Number, default: 0 },
   totalPot: { type: Number, default: 0 },

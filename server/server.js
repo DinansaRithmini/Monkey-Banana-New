@@ -31,6 +31,7 @@ if (fs.existsSync(privateKeyPath)) {
 }
 
 const GameManager = require("./gameManager")
+const { newHoldKey } = require("./utils/holdKey")
 
 
 const app = express()
@@ -925,11 +926,14 @@ app.post("/api/createUserGame", async (req, res) => {
 
   console.log(`BET for platform-verified uuid ${userUuid} (amount ${amount})`);
 
+  // A fresh key for this bet alone — never the round number. A player who
+  // tops up their bet several times in one round used to send every one of
+  // those holds under the identical round-number key; this is what lets
+  // settlement (server-game-manager.ts) track and release each one on its own.
+  const holdKey = newHoldKey();
+
   const payload = {
-    // The server's round, not the caller's — equal by the check above, but this
-    // way no unvalidated value can reach the platform if that check is ever
-    // moved or loosened.
-    sessionUuid: round.roundNumber.toString(),
+    sessionUuid: holdKey,
     sessionToken,
     gameSessionUuid,
     amount,
@@ -965,7 +969,10 @@ app.post("/api/createUserGame", async (req, res) => {
     // axios.post(`https://email-service.xcodelab.xyz/send-email`, emailPayload)
     //   .catch(err => console.error("Error sending email notification:", err.message));
 
-    return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data });
+    // holdKey travels back to the client, which forwards it to
+    // /api/continuous-game/join so this exact bet's hold can be settled on
+    // its own later — see server-game-manager.ts's handleRoundFinishCoinActions.
+    return res.json({ status: true, message: "Coins released and player joined game", data: releaseResponse.data, holdKey });
   } catch (err) {
     return res.status(500).json({ status: false, message: "Server error while releasing coins or joining game." });
   }

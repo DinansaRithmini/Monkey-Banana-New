@@ -296,6 +296,7 @@ class ServerGameManager {
     amount: number,
     userId?: string,
     profileImage?: string,
+    holdKey?: string,
   ): Promise<{ success: boolean; playerId?: string; error?: string; updated?: boolean }> {
     await this.ensureInitialized()
     
@@ -335,10 +336,18 @@ class ServerGameManager {
 
       existingPlayer.amount += newBetAmount;
       this.game.totalPot += newBetAmount;
-      
+
+      // Each top-up is its own GameOn hold — see handleRoundFinishCoinActions,
+      // which settles every entry here individually rather than assuming one
+      // hold covers a player's whole accumulated amount.
+      if (holdKey) {
+        if (!existingPlayer.holds) existingPlayer.holds = [];
+        existingPlayer.holds.push({ key: holdKey, amount: newBetAmount });
+      }
+
       // Save state to database
       this.saveGameToDatabase()
-      
+
       return { success: true, playerId: existingPlayer.id, updated: true };
     }
 
@@ -356,7 +365,8 @@ class ServerGameManager {
       color: colors[this.game.players.length % colors.length],
       joinedAt: Date.now(),
       profileImage: playerProfileImage,
-      isBot: undefined
+      isBot: undefined,
+      holds: holdKey ? [{ key: holdKey, amount: newBetAmount }] : []
     }
 
     // Check if this new player will outbid existing players
@@ -623,9 +633,21 @@ class ServerGameManager {
     }
   }
 
+  /**
+   * The GameOn holds behind a player's stake — one per bet/top-up (see
+   * Player.holds in types.ts). Players who joined before per-bet hold keys
+   * existed have no `holds` recorded; those settle their whole `amount` in
+   * one shot under the round-number key it was actually held under (the
+   * scheme every bet used before this).
+   */
+  private getSettlementHolds(player: Player): { key: string; amount: number }[] {
+    if (player.holds && player.holds.length > 0) return player.holds;
+    return [{ key: String(this.game!.roundNumber), amount: player.amount }];
+  }
+
   private async handleRoundFinishCoinActions() {
     if (!this.game || !this.game.winner) return;
-    
+
     // Skip if coin actions were already processed
     if (this.coinActionsProcessed) {
       console.log("Coin actions already processed, skipping")
@@ -633,24 +655,29 @@ class ServerGameManager {
     }
 
     try {
-      // Process CAPTURE for all real players (deduct bets)
+      // Process CAPTURE for all real players (deduct bets) — one CAPTURE per
+      // hold, not per player: a player who topped up their bet 3 times holds
+      // 3 separate GameOn holds, and each is only released by quoting its own
+      // key.
       for (const player of this.game.players) {
         if (player.isBot) continue;
         if (player.id === this.game.winner.id) continue; // 🚀 Skip winner
 
-        await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...createSignedHeaders(),
-          },
-          body: JSON.stringify({
-            uuid: player.id,
-            actionType: "CAPTURE",
-            amount: player.amount,
-            sessionUuid: this.game.roundNumber,
-          }),
-        });
+        for (const hold of this.getSettlementHolds(player)) {
+          await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...createSignedHeaders(),
+            },
+            body: JSON.stringify({
+              uuid: player.id,
+              actionType: "CAPTURE",
+              amount: hold.amount,
+              sessionUuid: hold.key,
+            }),
+          });
+        }
         console.log(`CAPTURE action processed for player ${player.name} amount ${player.amount}`);
       }
 
@@ -664,20 +691,28 @@ class ServerGameManager {
         // Otherwise, send WIN with actual winnings
         const winnings = isOnlyPlayer ? 0 : this.game.totalPot - this.game.winner.amount;
 
-        // Award winnings
-        await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...createSignedHeaders(),
-          },
-          body: JSON.stringify({
-            uuid: this.game.winner.id,
-            actionType: "WIN",
-            amount: winnings,
-            sessionUuid: this.game.roundNumber,
-          }),
-        });
+        // A WIN call releases exactly the one hold it names. The winner may
+        // hold several (their own top-ups), so every one of them needs its
+        // own WIN to come back — but the profit only belongs once: it rides
+        // on the first hold, and the rest are released with amount 0 (the
+        // same "pure release" shape already used for the isOnlyPlayer case).
+        const winnerHolds = this.getSettlementHolds(this.game.winner);
+        for (let i = 0; i < winnerHolds.length; i++) {
+          const hold = winnerHolds[i];
+          await fetch(`${process.env.NEXT_PUBLIC_SERVER_BACKEND_URL}/api/coinRelease`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...createSignedHeaders(),
+            },
+            body: JSON.stringify({
+              uuid: this.game.winner.id,
+              actionType: "WIN",
+              amount: i === 0 ? winnings : 0,
+              sessionUuid: hold.key,
+            }),
+          });
+        }
 
         if (isOnlyPlayer) {
           console.log(`Winner ${this.game.winner.name} is the only player - WIN action called with amount 0`);
