@@ -1,3 +1,12 @@
+// One GameOn wallet hold behind a player's stake — one per bet/top-up. See
+// server/utils/holdKey.js. Empty on players who joined before per-bet hold
+// keys existed; those settle their whole `amount` under the legacy
+// round-number key instead (see legacyHoldKey / handleRoundFinishCoinActions).
+export interface PlayerHold {
+  key: string
+  amount: number
+}
+
 export interface Player {
   isBot: any
   id: string
@@ -6,6 +15,7 @@ export interface Player {
   color: string
   joinedAt: number
   profileImage: string
+  holds?: PlayerHold[]
 }
 
 export interface GameState {

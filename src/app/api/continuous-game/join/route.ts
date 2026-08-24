@@ -4,7 +4,7 @@ import { resolveSessionToken, InvalidSessionTokenError } from '../../../../utils
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, amount, sessionToken, profileImage } = await request.json()
+    const { name, amount, sessionToken, profileImage, holdKey } = await request.json()
 
     if (!name || !amount || amount <= 0) {
       return NextResponse.json(
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     // a seat on the wheel (and so collect the pot) without holding any coins.
     const userId = await resolveSessionToken(sessionToken)
 
-    const result = await serverGameManager.addPlayer(name, amount, userId, profileImage)
+    const result = await serverGameManager.addPlayer(name, amount, userId, profileImage, holdKey)
 
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 })
