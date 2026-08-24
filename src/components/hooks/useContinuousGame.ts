@@ -171,7 +171,7 @@ export function useContinuousGame() {
     const initialTimeLeft = calculateTimeLeft()
     setClientTimeLeft(initialTimeLeft)
     
-    console.log(`⏱️ Timer started for round ${rawGameState.roundNumber}: ${initialTimeLeft}s remaining`)
+    // console.log(`⏱️ Timer started for round ${rawGameState.roundNumber}: ${initialTimeLeft}s remaining`)
 
     // Then update every second
     const interval = setInterval(() => {
@@ -188,20 +188,20 @@ export function useContinuousGame() {
 
   // Set up WebSocket connection and listeners
   useEffect(() => {
-    console.log("🚀 Initializing WebSocket connection...")
+    // console.log("🚀 Initializing WebSocket connection...")
     
     // Connect to socket FIRST
     const socket = socketManager.connect()
-    console.log("🔌 WebSocket connected for continuous game")
+    // console.log("🔌 WebSocket connected for continuous game")
     
     // Listen for game state updates BEFORE joining room
     socketManager.onGameUpdated((game: GameState) => {
-      console.log("📡 WebSocket update received:", { 
-        round: game.roundNumber, 
-        phase: game.phase, 
-        players: game.players.length,
-        bettingStartTime: game.bettingStartTime 
-      })
+      // console.log("📡 WebSocket update received:", { 
+      //   round: game.roundNumber, 
+      //   phase: game.phase, 
+      //   players: game.players.length,
+      //   bettingStartTime: game.bettingStartTime 
+      // })
       setRawGameState(game)
       setError(null)
       setLoading(false)
@@ -211,13 +211,13 @@ export function useContinuousGame() {
     const joinTimeout = setTimeout(() => {
       // Join the continuous game room - server will send current state immediately
       socketManager.joinGame(CONTINUOUS_GAME_ID)
-      console.log("🎮 Joined game room:", CONTINUOUS_GAME_ID)
+      // console.log("🎮 Joined game room:", CONTINUOUS_GAME_ID)
     }, 100)
 
     // Fallback: fetch initial state if socket doesn't deliver within 2 seconds
     const fallbackTimeout = setTimeout(async () => {
       if (!rawGameState) {
-        console.log("⚠️ Fallback: fetching initial state via HTTP")
+        // console.log("⚠️ Fallback: fetching initial state via HTTP")
         try {
           const response = await fetch("/api/continuous-game")
           const data = await response.json()
@@ -240,7 +240,7 @@ export function useContinuousGame() {
     return () => {
       clearTimeout(joinTimeout)
       clearTimeout(fallbackTimeout)
-      console.log("🔌 WebSocket disconnected")
+      // console.log("🔌 WebSocket disconnected")
       socketManager.disconnect()
     }
   }, []) // Empty dependency array - only run once on mount
